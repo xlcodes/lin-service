@@ -5,13 +5,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisModule } from './core/redis/redis.module';
-import {
-  utilities,
-  WINSTON_MODULE_NEST_PROVIDER,
-  WinstonLogger,
-  WinstonModule,
-} from 'nest-winston';
+import { utilities, WinstonModule } from 'nest-winston';
 import { transports, format } from 'winston';
+import { UserModule } from './modules/user/user.module';
+import { CaptchaModule } from './core/captcha/captcha.module';
 import 'winston-daily-rotate-file';
 
 @Module({
@@ -61,6 +58,8 @@ import 'winston-daily-rotate-file';
       inject: [ConfigService],
     }),
     RedisModule,
+    UserModule,
+    CaptchaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
