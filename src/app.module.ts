@@ -5,6 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisModule } from './core/redis/redis.module';
+import {
+  utilities,
+  WINSTON_MODULE_NEST_PROVIDER,
+  WinstonLogger,
+  WinstonModule,
+} from 'nest-winston';
+import { transports, format } from 'winston';
+import 'winston-daily-rotate-file';
 
 @Module({
   imports: [
@@ -28,6 +36,28 @@ import { RedisModule } from './core/redis/redis.module';
           connectorPackage: 'mysql2',
         } as TypeOrmModuleOptions;
       },
+      inject: [ConfigService],
+    }),
+    // 日志集成
+    WinstonModule.forRootAsync({
+      useFactory: (configService: ConfigService) => ({
+        level: 'debug',
+        transports: [
+          new transports.DailyRotateFile({
+            level: configService.get('winston_logger_level'),
+            dirname: configService.get('winston_logger_dirname'),
+            filename: configService.get('winston_logger_filename'),
+            datePattern: configService.get('winston_logger_date_pattern'),
+            maxSize: configService.get('winston_logger_max_size'),
+          }),
+          new transports.Console({
+            format: format.combine(
+              format.timestamp(),
+              utilities.format.nestLike(),
+            ),
+          }),
+        ],
+      }),
       inject: [ConfigService],
     }),
     RedisModule,
