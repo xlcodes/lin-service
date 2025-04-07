@@ -1,37 +1,57 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '@/modules/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
+import { CaptchaService } from '@/core/captcha/captcha.service';
+import { ResultData } from '@/core/utils/result';
+import { ResultCodeEnum } from '@/core/common/constant';
+import { md5 } from '@/core/utils/md5';
 
 @Injectable()
 export class UserService {
+  private logger = new Logger(UserService.name);
+
   @InjectRepository(UserEntity)
   private readonly userRepository: Repository<UserEntity>;
 
+  @Inject(CaptchaService)
+  private readonly captchaService: CaptchaService;
+
   async register(dto: RegisterUserDto) {
+    // 验证码校验
+    const res = await this.captchaService.verify(dto.code, dto.uuid);
+    if (!res) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '验证码校验失败',
+      );
+    }
 
-  }
+    const foundUser = await this.userRepository.findOneBy({
+      username: dto.username,
+    });
 
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
-  }
+    if (foundUser) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '当前用户已存在',
+      );
+    }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+    const user = new UserEntity();
+    user.username = dto.username;
+    user.password = md5(dto.password);
+    user.nickName = dto.username;
+    user.createdAt = new Date();
+    user.updatedAt = new Date();
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    try {
+      await this.userRepository.save(user);
+      return ResultData.ok(null, '用户注册成功');
+    } catch (err) {
+      this.logger.error(err);
+      return ResultData.fail(ResultCodeEnum.error, '用户注册失败');
+    }
   }
 }
