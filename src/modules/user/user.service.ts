@@ -4,7 +4,7 @@ import { UserEntity } from '@/modules/user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ResultData } from '@/core/utils/result';
-import { ResultCodeEnum } from '@/core/common/constant';
+import { CacheEnum, ResultCodeEnum } from '@/core/common/constant';
 import { md5 } from '@/core/utils/md5';
 import { LoginUserDto } from '@/modules/user/dto/login-user.dto';
 import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
@@ -12,6 +12,7 @@ import { RedisService } from '@/core/redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
+import ms from 'ms';
 
 @Injectable()
 export class UserService {
@@ -36,25 +37,72 @@ export class UserService {
    * 生成基于用户信息的token
    * @param options
    */
-  createToken(options: { userId: number; uuid: string }) {
-    return this.jwtService.sign(options, {
-      expiresIn: this.configService.get('jwt_expires_in'),
+  async createToken(options: { userId: number; uuid: string }) {
+    const expiresIn = this.configService.get('jwt_expires_in');
+
+    const expiresInMs = ms(expiresIn || '');
+
+    const cacheRes = await this.redisService.set(
+      `${CacheEnum.LOGIN_TOKEN_KEY}${options.userId}`,
+      options.uuid,
+      Number(expiresInMs),
+    );
+
+    if (!cacheRes) {
+      return null;
+    }
+
+    const token = this.jwtService.sign(options, {
+      expiresIn,
     });
+
+    return token;
   }
 
   /**
    * token 解析
    * @param token
    */
-  verifyToken(token: string) {
+  async verifyToken(token: string) {
+    const res: Partial<{ userId: number; uuid: string }> = {};
+
+    // 解析 token
     try {
-      return this.jwtService.verify(token, {
+      const data = this.jwtService.verify(token, {
         secret: this.configService.get('jwt_secret'),
       });
+
+      if (data && data.userId && data.uuid) {
+        res.userId = data.userId;
+        res.uuid = data.uuid;
+      }
     } catch (err) {
       this.logger.error(err);
       return null;
     }
+
+    if (!res.userId) return null;
+
+    // 查询 redis
+    const cacheRedis = await this.redisService.get(
+      `${CacheEnum.LOGIN_TOKEN_KEY}${res.userId}`,
+    );
+
+    if (!cacheRedis) return null;
+
+    // 查数据库
+    const foundUser = await this.userRepository.findOne({
+      where: {
+        uid: res.userId,
+      },
+      select: {
+        password: false,
+      },
+    });
+
+    if (!foundUser) return null;
+
+    return foundUser;
   }
 
   async register(dto: RegisterUserDto) {
@@ -115,7 +163,7 @@ export class UserService {
 
     const id = uuid();
 
-    const token = this.createToken({
+    const token = await this.createToken({
       userId: user.uid,
       uuid: id,
     });
