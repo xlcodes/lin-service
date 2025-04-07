@@ -11,6 +11,8 @@ import { UserModule } from './modules/user/user.module';
 import { CaptchaModule } from './core/captcha/captcha.module';
 import 'winston-daily-rotate-file';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { LoginGuard } from '@/core/guards/login.guard';
 
 @Module({
   imports: [
@@ -75,6 +77,12 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
     CaptchaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: LoginGuard,
+    },
+  ],
 })
 export class AppModule {}

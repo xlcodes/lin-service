@@ -12,7 +12,7 @@ import { RedisService } from '@/core/redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
-import ms from 'ms';
+import * as ms from 'ms';
 
 @Injectable()
 export class UserService {
