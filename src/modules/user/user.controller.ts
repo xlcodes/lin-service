@@ -17,6 +17,7 @@ export class UserController {
   }
 
   @ApiOperation({ summary: '用户登录接口' })
+  @Post('login')
   async login(@Body() dto: LoginUserDto) {
     return await this.userService.login(dto);
   }

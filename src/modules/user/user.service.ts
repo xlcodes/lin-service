@@ -130,6 +130,8 @@ export class UserService {
     user.username = dto.username;
     user.password = md5(dto.password);
     user.nickName = dto.username;
+    // 添加默认头像
+    user.avatarUrl = '/images/def-avatar.png';
     user.createdAt = new Date();
     user.updatedAt = new Date();
 

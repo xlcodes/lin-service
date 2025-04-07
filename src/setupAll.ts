@@ -3,8 +3,10 @@ import { HttpExceptionsFilter } from '@/core/filters/http-exceptions-filter';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
-const createDocument = (app: INestApplication) => {
+const createDocument = (app: NestExpressApplication) => {
   if (process.env.NODE_ENV !== 'development') {
     return;
   }
@@ -22,9 +24,11 @@ const createDocument = (app: INestApplication) => {
   SwaggerModule.setup(docsPrefix, app, document);
 };
 
-const setupAll = async (app: INestApplication) => {
+const setupAll = async (app: NestExpressApplication) => {
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalFilters(new HttpExceptionsFilter());
+
+  app.useStaticAssets(join(__dirname, '..', 'public'));
 
   // 集成swagger文档
   createDocument(app);

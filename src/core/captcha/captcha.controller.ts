@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
