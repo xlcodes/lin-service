@@ -2,11 +2,16 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '@/modules/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { md5 } from '@/core/utils/md5';
+import { LoginUserDto } from '@/modules/user/dto/login-user.dto';
+import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
+import { RedisService } from '@/core/redis/redis.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -17,6 +22,40 @@ export class UserService {
 
   @Inject(CaptchaService)
   private readonly captchaService: CaptchaService;
+
+  @Inject(RedisService)
+  private readonly redisService: RedisService;
+
+  @Inject(JwtService)
+  private readonly jwtService: JwtService;
+
+  @Inject(ConfigService)
+  private readonly configService: ConfigService;
+
+  /**
+   * 生成基于用户信息的token
+   * @param options
+   */
+  createToken(options: { userId: number; uuid: string }) {
+    return this.jwtService.sign(options, {
+      expiresIn: this.configService.get('jwt_expires_in'),
+    });
+  }
+
+  /**
+   * token 解析
+   * @param token
+   */
+  verifyToken(token: string) {
+    try {
+      return this.jwtService.verify(token, {
+        secret: this.configService.get('jwt_secret'),
+      });
+    } catch (err) {
+      this.logger.error(err);
+      return null;
+    }
+  }
 
   async register(dto: RegisterUserDto) {
     // 验证码校验
@@ -53,5 +92,34 @@ export class UserService {
       this.logger.error(err);
       return ResultData.fail(ResultCodeEnum.error, '用户注册失败');
     }
+  }
+
+  async login(dto: LoginUserDto) {
+    const user = await this.userRepository.findOneBy({
+      username: dto.username,
+    });
+
+    if (!user) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '当前用户不存在',
+      );
+    }
+
+    if (user.password !== md5(dto.password)) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '密码错误',
+      );
+    }
+
+    const id = uuid();
+
+    const token = this.createToken({
+      userId: user.uid,
+      uuid: id,
+    });
+
+    return ResultData.ok({ token }, '用户登录成功');
   }
 }

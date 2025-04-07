@@ -2,6 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { LoginUserDto } from '@/modules/user/dto/login-user.dto';
 
 @ApiTags('用户模块')
 @Controller('user')
@@ -13,5 +14,10 @@ export class UserController {
   @Post('register')
   async register(@Body() dto: RegisterUserDto) {
     return await this.userService.register(dto);
+  }
+
+  @ApiOperation({ summary: '用户登录接口' })
+  async login(@Body() dto: LoginUserDto) {
+    return await this.userService.login(dto);
   }
 }

@@ -10,6 +10,7 @@ import { transports, format } from 'winston';
 import { UserModule } from './modules/user/user.module';
 import { CaptchaModule } from './core/captcha/captcha.module';
 import 'winston-daily-rotate-file';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -34,6 +35,18 @@ import 'winston-daily-rotate-file';
         } as TypeOrmModuleOptions;
       },
       inject: [ConfigService],
+    }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory(config: ConfigService) {
+        return {
+          secret: config.get('jwt_secret'),
+          signOptions: {
+            expiresIn: config.get('jwt_expires_in'),
+          },
+        } as JwtModuleOptions;
+      },
     }),
     // 日志集成
     WinstonModule.forRootAsync({
