@@ -5,7 +5,7 @@ import {
 } from '@/modules/bill/dto/bill-type.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { UserService } from '@/modules/user/user.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
@@ -217,6 +217,7 @@ export class BillTypeService {
           user: {
             uid: uid,
           },
+          deletedAt: IsNull(),
         },
         skip: skipCount,
         take: pageSize,

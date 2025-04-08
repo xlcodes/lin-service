@@ -5,7 +5,7 @@ import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
-import { Repository } from 'typeorm';
+import { Between, IsNull, Repository } from 'typeorm';
 import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { IPageInfo } from '@/core/types/common.type';
 
@@ -98,6 +98,7 @@ export class BillService {
       where: {
         id: dto.id,
       },
+      relations: ['user'],
     });
 
     if (!foundBill || foundBill.deletedAt) {
@@ -186,10 +187,21 @@ export class BillService {
     const { pageNo, pageSize } = pageInfo;
     const { date } = queryData;
 
-    const condition: Record<string, any> = {};
+    const condition: Record<string, any> = {
+      user: {
+        uid: user.uid,
+      },
+      deletedAt: IsNull(),
+    };
 
     if (date) {
-      condition.date = date;
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      condition.date = Between(startDate, endDate);
     }
 
     const skipCount = (pageNo - 1) * pageSize;

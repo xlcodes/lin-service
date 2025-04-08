@@ -54,7 +54,7 @@ export class BillController {
   }
 
   @ApiOperation({ summary: '软删除账单' })
-  @Delete('delete')
+  @Delete('delete/:id')
   @RequireLogin()
   async delete(
     @Param('id', generateParseIntPipe('id')) billId: number,

@@ -1,4 +1,4 @@
-import { IsDate, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsDateString, IsEnum, IsNotEmpty, IsNumber } from 'class-validator';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 
 export class CreateBillDto {
@@ -17,9 +17,12 @@ export class CreateBillDto {
   @IsNotEmpty({
     message: '账单产生时间不能为空',
   })
-  @IsDate({
-    message: '账单产生时间类型异常，请输入时间类型',
-  })
+  @IsDateString(
+    {},
+    {
+      message: '账单产生时间类型异常，请输入时间类型',
+    },
+  )
   date: Date;
 
   @IsNotEmpty({ message: `账单分类不能为空` })
