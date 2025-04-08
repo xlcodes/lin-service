@@ -1,6 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { BillEntity } from '@/modules/bill/entities/bill.entity';
+import { RoleEntity } from '@/modules/role/entities/role.entity';
 
 @Entity('sys_users')
 export class UserEntity {
@@ -47,6 +55,12 @@ export class UserEntity {
 
   @OneToMany(() => BillEntity, (bill) => bill.id)
   bill: BillEntity[];
+
+  @ManyToMany(() => RoleEntity, (role) => role.id)
+  @JoinTable({
+    name: 'user_roles',
+  })
+  roles: RoleEntity[];
 
   @Column({
     type: 'timestamp',

@@ -19,6 +19,8 @@ import { BillTypeController } from './modules/bill/controller/bill-type.controll
 import { UserEntity } from '@/modules/user/entities/user.entity';
 import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
+import { PermissionModule } from './modules/permission/permission.module';
+import { RoleModule } from './modules/role/role.module';
 
 @Module({
   imports: [
@@ -83,6 +85,8 @@ import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
     UserModule,
     CaptchaModule,
     BillModule,
+    PermissionModule,
+    RoleModule,
   ],
   controllers: [AppController, BillTypeController],
   providers: [
