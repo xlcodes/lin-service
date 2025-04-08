@@ -1,14 +1,15 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RequireLogin, UserInfo } from '@/core/decorator/custom.decorator';
+import { IsAdmin, UserInfo } from '@/core/decorator/custom.decorator';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  @RequireLogin()
+  @IsAdmin()
   getHello(@UserInfo() info: any): string {
+    console.log(info);
     return this.appService.getHello();
   }
 }

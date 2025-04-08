@@ -2,6 +2,8 @@ export const REDIS_CLIENT = 'REDIS_CLIENT';
 
 export const REQUIRE_LOGIN = 'REQUIRE_LOGIN';
 
+export const REQUIRE_IS_ADMIN = 'REQUIRE_IS_ADMIN';
+
 export enum ResultCodeEnum {
   success = 200,
   error = 400,

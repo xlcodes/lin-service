@@ -21,6 +21,7 @@ import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
+import { IsAdminGuard } from '@/core/guards/isAdmin.guard';
 
 @Module({
   imports: [
@@ -94,6 +95,10 @@ import { RoleModule } from './modules/role/role.module';
     {
       provide: APP_GUARD,
       useClass: LoginGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: IsAdminGuard,
     },
     BillTypeService,
   ],
