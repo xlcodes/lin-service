@@ -45,18 +45,16 @@ export class UserService {
     const cacheRes = await this.redisService.set(
       `${CacheEnum.LOGIN_TOKEN_KEY}${options.userId}`,
       options.uuid,
-      Number(expiresInMs),
+      Number(expiresInMs) / 1000,
     );
 
     if (!cacheRes) {
       return null;
     }
 
-    const token = this.jwtService.sign(options, {
+    return this.jwtService.sign(options, {
       expiresIn,
     });
-
-    return token;
   }
 
   /**

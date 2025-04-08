@@ -141,7 +141,7 @@ describe('UserService', () => {
       expect(mockRedis.set).toHaveBeenCalledWith(
         `${CacheEnum.LOGIN_TOKEN_KEY}${TEST_UID}`,
         TEST_UUID,
-        1800000,
+        1800,
       );
     });
 
@@ -328,7 +328,7 @@ describe('UserService', () => {
       expect(mockRedis.set).toHaveBeenCalledWith(
         `${CacheEnum.LOGIN_TOKEN_KEY}${TEST_UID}`,
         expect.any(String),
-        1800000,
+        1800,
       );
     });
   });
