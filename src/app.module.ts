@@ -13,6 +13,12 @@ import 'winston-daily-rotate-file';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { LoginGuard } from '@/core/guards/login.guard';
+import { BillModule } from './modules/bill/bill.module';
+import { BillTypeService } from './modules/bill/service/bill-type.service';
+import { BillTypeController } from './modules/bill/controller/bill-type.controller';
+import { UserEntity } from '@/modules/user/entities/user.entity';
+import { BillEntity } from '@/modules/bill/entities/bill.entity';
+import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 
 @Module({
   imports: [
@@ -29,7 +35,7 @@ import { LoginGuard } from '@/core/guards/login.guard';
           username: config.get('mysql_user'),
           password: config.get('mysql_pwd'),
           database: config.get('mysql_db'),
-          synchronize: true,
+          synchronize: process.env.NODE_ENV === 'development',
           logging: true,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           poolSize: 10,
@@ -38,6 +44,7 @@ import { LoginGuard } from '@/core/guards/login.guard';
       },
       inject: [ConfigService],
     }),
+    TypeOrmModule.forFeature([UserEntity, BillEntity, BillTypeEntity]),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
@@ -75,14 +82,16 @@ import { LoginGuard } from '@/core/guards/login.guard';
     RedisModule,
     UserModule,
     CaptchaModule,
+    BillModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, BillTypeController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
       useClass: LoginGuard,
     },
+    BillTypeService,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
+import { BillEntity } from '@/modules/bill/entities/bill.entity';
 
 @Entity('sys_users')
 export class UserEntity {
@@ -32,6 +34,21 @@ export class UserEntity {
   avatarUrl: string;
 
   @Column({
+    type: 'char',
+    default: false,
+    comment: '是否为管理员',
+  })
+  isAdmin: string;
+
+  @OneToMany(() => BillTypeEntity, (billType) => billType.id, {
+    onDelete: 'DEFAULT',
+  })
+  billType: BillTypeEntity[];
+
+  @OneToMany(() => BillEntity, (bill) => bill.id)
+  bill: BillEntity[];
+
+  @Column({
     type: 'timestamp',
     name: 'created_at',
     comment: '创建时间',
@@ -44,4 +61,12 @@ export class UserEntity {
     comment: '更新时间',
   })
   updatedAt: Date;
+
+  @Column({
+    type: 'timestamp',
+    name: 'delete_at',
+    default: null,
+    comment: '删除时间，用于软删除',
+  })
+  deletedAt: Date;
 }

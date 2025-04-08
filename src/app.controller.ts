@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { RequireLogin } from '@/core/decorator/custom.decorator';
+import { RequireLogin, UserInfo } from '@/core/decorator/custom.decorator';
 
 @Controller()
 export class AppController {
@@ -8,7 +8,7 @@ export class AppController {
 
   @Get()
   @RequireLogin()
-  getHello(): string {
+  getHello(@UserInfo() info: any): string {
     return this.appService.getHello();
   }
 }

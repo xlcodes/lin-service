@@ -77,7 +77,7 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('token生成方法 createToken', () => {
+  describe('createToken token生成方法', () => {
     it('token生成异常', async () => {
       mockConfig.get.mockReturnValue('30m');
       mockRedis.set.mockResolvedValue(false);
@@ -107,7 +107,7 @@ describe('UserService', () => {
     });
   });
 
-  describe('token校验方法', () => {
+  describe('verifyToken token校验方法', () => {
     it('token解析异常', async () => {
       const mockToken = 'mock-token';
 
@@ -191,7 +191,7 @@ describe('UserService', () => {
     });
   });
 
-  describe('用户注册', () => {
+  describe('register 用户注册', () => {
     const mockUser = {
       username: 'test',
       password: 'test-pwd',
@@ -289,11 +289,12 @@ describe('UserService', () => {
         password: md5(testUser.password),
         createdAt: new Date(),
         updatedAt: new Date(),
+        avatarUrl: '/images/def-avatar.png',
       });
     });
   });
 
-  describe('用户登录', () => {
+  describe('login 用户登录', () => {
     it('指定登录用户不存在', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
 
@@ -352,6 +353,101 @@ describe('UserService', () => {
         message: '用户登录成功',
         data: {
           token: 'mock-token',
+        },
+      });
+    });
+  });
+
+  describe('findByUserId 根据用户id查询详情', () => {
+    it('当前用户不存在', async () => {
+      const testUser = {
+        uid: 1,
+        username: 'mock_user',
+        password: 'test-pwd',
+        nickName: 'mock-nickName',
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      const res = await service.findByUserId(testUser.uid);
+      expect(res).toBeNull();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          uid: testUser.uid,
+        },
+        select: {
+          password: false,
+        },
+      });
+    });
+
+    it('成功获取到用户详情', async () => {
+      const testUser = {
+        uid: 1,
+        username: 'mock_user',
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(testUser);
+
+      const res = await service.findByUserId(testUser.uid);
+      expect(res).toEqual(testUser);
+      expect(mockUserRepo.findOne).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('checkIsAdmin 检查当前用户是否为管理员', () => {
+    it('用户不存在', async () => {
+      const testUser = {
+        uid: 1,
+        username: 'mock_user',
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      const res = await service.checkIsAdmin(testUser.uid);
+
+      expect(res).toBeFalsy();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          uid: testUser.uid,
+        },
+      });
+    });
+
+    it('用户不是管理员', async () => {
+      const testUser = {
+        uid: 1,
+        username: 'mock_user',
+        isAdmin: false,
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(testUser);
+
+      const res = await service.checkIsAdmin(testUser.uid);
+
+      expect(res).toBeFalsy();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          uid: testUser.uid,
+        },
+      });
+    });
+
+    it('用户是管理员', async () => {
+      const testUser = {
+        uid: 1,
+        username: 'mock_user',
+        isAdmin: true,
+      };
+
+      mockUserRepo.findOne.mockResolvedValue(testUser);
+
+      const res = await service.checkIsAdmin(testUser.uid);
+
+      expect(res).toBeTruthy();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: {
+          uid: testUser.uid,
         },
       });
     });

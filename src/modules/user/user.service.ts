@@ -105,6 +105,10 @@ export class UserService {
     return foundUser;
   }
 
+  /**
+   * 用户注册
+   * @param dto
+   */
   async register(dto: RegisterUserDto) {
     // 验证码校验
     const res = await this.captchaService.verify(dto.code, dto.uuid);
@@ -144,10 +148,16 @@ export class UserService {
     }
   }
 
+  /**
+   * 用户登录
+   * @param dto
+   */
   async login(dto: LoginUserDto) {
     const user = await this.userRepository.findOneBy({
       username: dto.username,
     });
+
+    console.log(user);
 
     if (!user) {
       return ResultData.exceptionFail(
@@ -171,5 +181,45 @@ export class UserService {
     });
 
     return ResultData.ok({ token }, '用户登录成功');
+  }
+
+  /**
+   * 根据uid查询用户详情
+   * @param uid
+   */
+  async findByUserId(uid: number) {
+    const user = await this.userRepository.findOne({
+      where: {
+        uid,
+      },
+      select: {
+        password: false,
+      },
+    });
+
+    if (!user) {
+      this.logger.debug(`用户 ${uid} 详情获取失败`);
+      return null;
+    }
+
+    return user;
+  }
+
+  /**
+   * 检查当前用户是否为管理员
+   * @param userId
+   */
+  async checkIsAdmin(userId: number) {
+    const user = await this.userRepository.findOne({
+      where: {
+        uid: userId,
+      },
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    return user.isAdmin;
   }
 }
