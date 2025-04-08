@@ -157,8 +157,6 @@ export class UserService {
       username: dto.username,
     });
 
-    console.log(user);
-
     if (!user) {
       return ResultData.exceptionFail(
         ResultCodeEnum.exception_error,

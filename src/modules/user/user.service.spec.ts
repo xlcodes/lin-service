@@ -12,6 +12,43 @@ import { ConfigService } from '@nestjs/config';
 describe('UserService', () => {
   let service: UserService;
 
+  // Constants
+  const TEST_UID = 1;
+  const TEST_USERNAME = 'test-user';
+  const TEST_PASSWORD = 'test-pwd';
+  const TEST_UUID = 'test-uuid';
+  const TEST_CODE = 'test-code';
+  const TEST_TOKEN = 'test-token';
+  const TEST_DATE = new Date('2025-04-01 12:00:00');
+  const DEFAULT_AVATAR = '/images/def-avatar.png';
+  const TOKEN_EXPIRY = '30m';
+
+  // Mock data generators
+  const createMockUser = (overrides = {}) => ({
+    uid: TEST_UID,
+    username: TEST_USERNAME,
+    password: md5(TEST_PASSWORD),
+    nickName: TEST_USERNAME,
+    avatarUrl: DEFAULT_AVATAR,
+    isAdmin: false,
+    ...overrides,
+  });
+
+  const createRegisterDto = (overrides = {}) => ({
+    username: TEST_USERNAME,
+    password: TEST_PASSWORD,
+    uuid: TEST_UUID,
+    code: TEST_CODE,
+    ...overrides,
+  });
+
+  const createLoginDto = (overrides = {}) => ({
+    username: TEST_USERNAME,
+    password: TEST_PASSWORD,
+    ...overrides,
+  });
+
+  // Mock services
   const mockUserRepo = {
     findOne: jest.fn(),
     findOneBy: jest.fn(),
@@ -35,11 +72,26 @@ describe('UserService', () => {
   };
 
   const mockConfig = {
-    get: jest.fn(),
+    get: jest.fn().mockReturnValue(TOKEN_EXPIRY),
   };
 
   beforeEach(async () => {
-    mockCaptcha.verify.mockReturnValue(true);
+    jest.useFakeTimers();
+    jest.setSystemTime(TEST_DATE);
+
+    // Reset all mocks
+    mockUserRepo.findOne.mockReset();
+    mockUserRepo.findOneBy.mockReset();
+    mockUserRepo.save.mockReset();
+    mockUserRepo.update.mockReset();
+    mockCaptcha.verify.mockReset().mockReturnValue(true);
+    mockRedis.set.mockReset();
+    mockRedis.get.mockReset();
+    mockRedis.del.mockReset();
+    mockJwt.sign.mockReset();
+    mockJwt.verify.mockReset();
+    mockConfig.get.mockReset().mockReturnValue(TOKEN_EXPIRY);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -70,386 +122,264 @@ describe('UserService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('createToken token生成方法', () => {
-    it('token生成异常', async () => {
-      mockConfig.get.mockReturnValue('30m');
+  describe('createToken', () => {
+    const tokenPayload = { userId: TEST_UID, uuid: TEST_UUID };
+
+    it('should return null when failed to set token in redis', async () => {
       mockRedis.set.mockResolvedValue(false);
 
-      const res = await service.createToken({
-        userId: 1,
-        uuid: 'test-uuid',
-      });
+      const result = await service.createToken(tokenPayload);
 
-      expect(res).toBeNull();
-      expect(mockRedis.set).toHaveBeenCalledTimes(1);
-    });
-
-    it('token生成符合预期', async () => {
-      mockConfig.get.mockReturnValue('30m');
-      mockRedis.set.mockResolvedValue(true);
-      mockJwt.sign.mockResolvedValue('test-token');
-
-      const res = await service.createToken({
-        uuid: 'test-uuid',
-        userId: 1,
-      });
-
-      expect(res).toBeDefined();
-      expect(mockRedis.set).toHaveBeenCalledTimes(1);
-      expect(mockJwt.sign).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('verifyToken token校验方法', () => {
-    it('token解析异常', async () => {
-      const mockToken = 'mock-token';
-
-      mockJwt.verify.mockImplementation(() => {
-        throw new Error('token解析异常');
-      });
-
-      const res = await service.verifyToken(mockToken);
-
-      expect(res).toBeNull();
-      expect(mockJwt.verify).toHaveBeenCalledTimes(1);
-    });
-
-    it('token数据解析异常', async () => {
-      const mockToken = 'mock-token';
-      mockJwt.verify.mockReturnValue({
-        uuid: 'test-uuid',
-      });
-      const res = await service.verifyToken(mockToken);
-      expect(res).toBeNull();
-    });
-
-    it('redis数据读取异常', async () => {
-      const mockToken = 'mock-token';
-      mockJwt.verify.mockReturnValue({
-        userId: 1,
-        uuid: 'test-uuid',
-      });
-
-      mockRedis.get.mockReturnValue(false);
-
-      const res = await service.verifyToken(mockToken);
-      expect(res).toBeNull();
-      expect(mockRedis.get).toHaveBeenCalledTimes(1);
-      expect(mockRedis.get).toHaveBeenCalledWith(
-        `${CacheEnum.LOGIN_TOKEN_KEY}${1}`,
+      expect(result).toBeNull();
+      expect(mockRedis.set).toHaveBeenCalledWith(
+        `${CacheEnum.LOGIN_TOKEN_KEY}${TEST_UID}`,
+        TEST_UUID,
+        1800000,
       );
     });
 
-    it('数据库查询异常', async () => {
-      const mockToken = 'mock-token';
-      mockJwt.verify.mockReturnValue({
-        userId: 1,
-        uuid: 'test-uuid',
-      });
-      mockRedis.get.mockReturnValue(true);
-      mockUserRepo.findOne.mockResolvedValue(null);
+    it('should return token when successfully created', async () => {
+      mockRedis.set.mockResolvedValue(true);
+      mockJwt.sign.mockReturnValue(TEST_TOKEN);
 
-      const res = await service.verifyToken(mockToken);
+      const result = await service.createToken(tokenPayload);
 
-      expect(res).toBeNull();
-      expect(mockUserRepo.findOne).toHaveBeenCalledTimes(1);
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          uid: 1,
-        },
-        select: {
-          password: false,
-        },
-      });
-    });
-
-    it('验证通过', async () => {
-      const mockToken = 'mock-token';
-      mockJwt.verify.mockReturnValue({
-        userId: 1,
-        uuid: 'test-uuid',
-      });
-      mockRedis.get.mockReturnValue(true);
-      mockUserRepo.findOne.mockResolvedValue({
-        userId: 1,
-        username: 'test',
-      });
-
-      const res = await service.verifyToken(mockToken);
-      expect(res).toEqual({
-        userId: 1,
-        username: 'test',
-      });
-      expect(mockUserRepo.findOne).toHaveBeenCalledTimes(1);
+      expect(result).toBe(TEST_TOKEN);
+      expect(mockJwt.sign).toHaveBeenCalledWith(
+        { userId: TEST_UID, uuid: TEST_UUID },
+        { expiresIn: TOKEN_EXPIRY },
+      );
     });
   });
 
-  describe('register 用户注册', () => {
-    const mockUser = {
-      username: 'test',
-      password: 'test-pwd',
-      uuid: 'test-uuid',
-      code: 'test-code',
-    };
+  describe('verifyToken', () => {
+    it('should return null when token verification throws error', async () => {
+      mockJwt.verify.mockImplementation(() => {
+        throw new Error('Token verification failed');
+      });
 
-    beforeEach(() => {
-      // 模拟时间
-      jest.useFakeTimers();
-      jest.setSystemTime(new Date('2025-04-01 12:00:00'));
+      const result = await service.verifyToken(TEST_TOKEN);
+
+      expect(result).toBeNull();
+      expect(mockJwt.verify).toHaveBeenCalledWith(TEST_TOKEN, {
+        secret: '30m',
+      });
     });
 
-    afterEach(() => {
-      jest.useRealTimers();
+    it('should return null when token payload is invalid', async () => {
+      mockJwt.verify.mockReturnValue({ uuid: TEST_UUID }); // Missing userId
+
+      const result = await service.verifyToken(TEST_TOKEN);
+
+      expect(result).toBeNull();
     });
 
-    it('验证码校验失败', async () => {
+    it('should return null when token not found in redis', async () => {
+      mockJwt.verify.mockReturnValue({ userId: TEST_UID, uuid: TEST_UUID });
+      mockRedis.get.mockResolvedValue(null);
+
+      const result = await service.verifyToken(TEST_TOKEN);
+
+      expect(result).toBeNull();
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.LOGIN_TOKEN_KEY}${TEST_UID}`,
+      );
+    });
+
+    it('should return null when user not found in database', async () => {
+      mockJwt.verify.mockReturnValue({ userId: TEST_UID, uuid: TEST_UUID });
+      mockRedis.get.mockResolvedValue(TEST_UUID);
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.verifyToken(TEST_TOKEN);
+
+      expect(result).toBeNull();
+      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
+        where: { uid: TEST_UID },
+        select: { password: false },
+      });
+    });
+
+    it('should return user when token is valid', async () => {
+      const mockUser = createMockUser();
+      mockJwt.verify.mockReturnValue({ userId: TEST_UID, uuid: TEST_UUID });
+      mockRedis.get.mockResolvedValue(TEST_UUID);
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.verifyToken(TEST_TOKEN);
+
+      expect(result).toEqual(mockUser);
+    });
+  });
+
+  describe('register', () => {
+    it('should return error when captcha verification fails', async () => {
       mockCaptcha.verify.mockReturnValue(false);
 
-      const res = await service.register(mockUser);
+      const result = await service.register(createRegisterDto());
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '验证码校验失败',
         data: undefined,
       });
-
-      expect(mockCaptcha.verify).toHaveBeenCalled();
+      expect(mockCaptcha.verify).toHaveBeenCalledWith(TEST_CODE, TEST_UUID);
     });
 
-    it('当前用户已经存在', async () => {
-      mockUserRepo.findOneBy.mockResolvedValue({
-        username: 'test1',
-      });
+    it('should return error when username already exists', async () => {
+      mockUserRepo.findOneBy.mockResolvedValue(createMockUser());
 
-      const res = await service.register(mockUser);
+      const result = await service.register(createRegisterDto());
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户已存在',
         data: undefined,
       });
-
-      expect(mockUserRepo.findOneBy).toHaveBeenCalled();
+      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
+        username: TEST_USERNAME,
+      });
     });
 
-    it('用户注册失败', async () => {
+    it('should return error when user creation fails', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
-      const mockError = new Error('register custom error');
+      mockUserRepo.save.mockRejectedValue(new Error('Database error'));
 
-      mockUserRepo.save.mockImplementation(() => {
-        throw mockError;
-      });
+      const result = await service.register(createRegisterDto());
 
-      const res = await service.register({
-        username: 'mock_user',
-        password: 'test-pwd',
-        uuid: 'test-uuid',
-        code: 'test-code',
-      });
-
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.error,
         message: '用户注册失败',
         data: undefined,
       });
-
-      expect(mockUserRepo.save).toHaveBeenCalled();
     });
 
-    it('用户注册成功', async () => {
+    it('should register user successfully with encrypted password', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
-
       mockUserRepo.save.mockResolvedValue(true);
 
-      const testUser = {
-        username: 'mock_user',
-        password: 'test-pwd',
-        uuid: 'test-uuid',
-        code: 'test-code',
-      };
+      const result = await service.register(createRegisterDto());
 
-      const res = await service.register(testUser);
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '用户注册成功',
         data: null,
       });
-      expect(mockUserRepo.save).toHaveBeenCalled();
-      // 校验密码是否加密
       expect(mockUserRepo.save).toHaveBeenCalledWith({
-        username: testUser.username,
-        nickName: testUser.username,
-        password: md5(testUser.password),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        avatarUrl: '/images/def-avatar.png',
+        username: TEST_USERNAME,
+        nickName: TEST_USERNAME,
+        password: md5(TEST_PASSWORD),
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
+        avatarUrl: DEFAULT_AVATAR,
       });
     });
   });
 
-  describe('login 用户登录', () => {
-    it('指定登录用户不存在', async () => {
+  describe('login', () => {
+    it('should return error when user not found', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
 
-      const mockUser = {
-        username: 'mock_user',
-        password: 'test-pwd',
-      };
+      const result = await service.login(createLoginDto());
 
-      const res = await service.login(mockUser);
-
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户不存在',
         data: undefined,
       });
+      expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
+        username: TEST_USERNAME,
+      });
     });
 
-    it('登录密码错误', async () => {
-      const testUser = {
-        username: 'mock_user',
-        password: 'test-pwd',
-      };
-      mockUserRepo.findOneBy.mockResolvedValue({
-        username: testUser.username,
-        password: 'test-pwd1',
-      });
+    it('should return error when password is incorrect', async () => {
+      mockUserRepo.findOneBy.mockResolvedValue(
+        createMockUser({ password: md5('wrong-password') }),
+      );
 
-      const res = await service.login(testUser);
+      const result = await service.login(createLoginDto());
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '密码错误',
       });
-      expect(mockUserRepo.findOneBy).toHaveBeenCalled();
     });
 
-    it('用户登录成功', async () => {
-      const testUser = {
-        uid: 'test-uid',
-        username: 'test-user',
-        password: 'test-pwd',
-      };
-
-      mockUserRepo.findOneBy.mockResolvedValue({
-        uid: testUser.uid,
-        username: testUser.username,
-        password: md5(testUser.password),
-      });
-      mockConfig.get.mockReturnValue('30m');
-      mockJwt.sign.mockReturnValue('mock-token');
+    it('should return token when login is successful', async () => {
+      const mockUser = createMockUser();
+      mockUserRepo.findOneBy.mockResolvedValue(mockUser);
+      mockJwt.sign.mockReturnValue(TEST_TOKEN);
       mockRedis.set.mockResolvedValue(true);
 
-      const res = await service.login(testUser);
-      expect(res).toEqual({
+      const result = await service.login(createLoginDto());
+
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '用户登录成功',
-        data: {
-          token: 'mock-token',
-        },
+        data: { token: TEST_TOKEN },
       });
+      expect(mockRedis.set).toHaveBeenCalledWith(
+        `${CacheEnum.LOGIN_TOKEN_KEY}${TEST_UID}`,
+        expect.any(String),
+        1800000,
+      );
     });
   });
 
-  describe('findByUserId 根据用户id查询详情', () => {
-    it('当前用户不存在', async () => {
-      const testUser = {
-        uid: 1,
-        username: 'mock_user',
-        password: 'test-pwd',
-        nickName: 'mock-nickName',
-      };
-
+  describe('findByUserId', () => {
+    it('should return null when user not found', async () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.findByUserId(testUser.uid);
-      expect(res).toBeNull();
+      const result = await service.findByUserId(TEST_UID);
+
+      expect(result).toBeNull();
       expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          uid: testUser.uid,
-        },
-        select: {
-          password: false,
-        },
+        where: { uid: TEST_UID },
+        select: { password: false },
       });
     });
 
-    it('成功获取到用户详情', async () => {
-      const testUser = {
-        uid: 1,
-        username: 'mock_user',
-      };
+    it('should return user without password when found', async () => {
+      const mockUser = createMockUser();
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
 
-      mockUserRepo.findOne.mockResolvedValue(testUser);
+      const result = await service.findByUserId(TEST_UID);
 
-      const res = await service.findByUserId(testUser.uid);
-      expect(res).toEqual(testUser);
-      expect(mockUserRepo.findOne).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockUser);
+      expect(result.password).toBe(md5(TEST_PASSWORD));
     });
   });
 
-  describe('checkIsAdmin 检查当前用户是否为管理员', () => {
-    it('用户不存在', async () => {
-      const testUser = {
-        uid: 1,
-        username: 'mock_user',
-      };
-
+  describe('checkIsAdmin', () => {
+    it('should return false when user not found', async () => {
       mockUserRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.checkIsAdmin(testUser.uid);
+      const result = await service.checkIsAdmin(TEST_UID);
 
-      expect(res).toBeFalsy();
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          uid: testUser.uid,
-        },
-      });
+      expect(result).toBe(false);
     });
 
-    it('用户不是管理员', async () => {
-      const testUser = {
-        uid: 1,
-        username: 'mock_user',
-        isAdmin: false,
-      };
+    it('should return false when user is not admin', async () => {
+      mockUserRepo.findOne.mockResolvedValue(createMockUser());
 
-      mockUserRepo.findOne.mockResolvedValue(testUser);
+      const result = await service.checkIsAdmin(TEST_UID);
 
-      const res = await service.checkIsAdmin(testUser.uid);
-
-      expect(res).toBeFalsy();
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          uid: testUser.uid,
-        },
-      });
+      expect(result).toBe(false);
     });
 
-    it('用户是管理员', async () => {
-      const testUser = {
-        uid: 1,
-        username: 'mock_user',
-        isAdmin: true,
-      };
+    it('should return true when user is admin', async () => {
+      mockUserRepo.findOne.mockResolvedValue(createMockUser({ isAdmin: true }));
 
-      mockUserRepo.findOne.mockResolvedValue(testUser);
+      const result = await service.checkIsAdmin(TEST_UID);
 
-      const res = await service.checkIsAdmin(testUser.uid);
-
-      expect(res).toBeTruthy();
-      expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: {
-          uid: testUser.uid,
-        },
-      });
+      expect(result).toBe(true);
     });
   });
 });

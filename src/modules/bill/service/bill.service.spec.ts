@@ -7,70 +7,115 @@ import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 import { ResultCodeEnum } from '@/core/common/constant';
 
-const createMockBill = () => {
-  return {
-    id: 1,
-    payType: PayTypeEnum.PAID,
-    amount: 10000, // ¥10.00
-    date: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    user: {
-      uid: 1,
-    },
-    type: {
-      id: 1,
-    },
-  } as BillEntity;
-};
-
 describe('BillService', () => {
   let service: BillService;
+  const TEST_UID = 1;
+  const TEST_BILL_ID = 1;
+  const TEST_BILL_TYPE_ID = 1;
+  const TEST_AMOUNT = 10000; // ¥10.00
+  const TEST_DATE = new Date('2025-04-01 12:00:00');
+  const TEST_PAGE_NO = 1;
+  const TEST_PAGE_SIZE = 10;
 
-  const testUid = 1;
+  // Mock data generators
+  const createMockUser = (overrides = {}) => ({
+    uid: TEST_UID,
+    username: 'test-user',
+    ...overrides,
+  });
 
-  const mockData = {
-    userService: {
-      findByUserId: jest.fn().mockResolvedValue({
-        uid: testUid,
-      }),
+  const createMockBillType = (overrides = {}) => ({
+    id: TEST_BILL_TYPE_ID,
+    name: 'test-bill-type',
+    payType: PayTypeEnum.PAID,
+    ...overrides,
+  });
+
+  const createMockBill = (overrides = {}) => ({
+    id: TEST_BILL_ID,
+    payType: PayTypeEnum.PAID,
+    amount: TEST_AMOUNT,
+    date: TEST_DATE,
+    createdAt: TEST_DATE,
+    updatedAt: TEST_DATE,
+    user: createMockUser(),
+    type: createMockBillType(),
+    ...overrides,
+  });
+
+  const createBillDto = (overrides = {}) => ({
+    payType: PayTypeEnum.PAID,
+    amount: TEST_AMOUNT,
+    date: TEST_DATE,
+    typeId: TEST_BILL_TYPE_ID,
+    ...overrides,
+  });
+
+  const createUpdateBillDto = (overrides = {}) => ({
+    id: TEST_BILL_ID,
+    ...createBillDto(),
+    ...overrides,
+  });
+
+  const createListQuery = (overrides = {}) => ({
+    pageInfo: {
+      pageSize: TEST_PAGE_SIZE,
+      pageNo: TEST_PAGE_NO,
     },
-    billTypeRepo: {
-      findOne: jest.fn(),
+    queryData: {
+      date: TEST_DATE,
     },
-    billRepo: {
-      save: jest.fn().mockResolvedValue({}),
-      findOne: jest.fn(),
-      findAndCount: jest.fn(),
-    },
+    ...overrides,
+  });
+
+  // Mock services
+  const mockUserService = {
+    findByUserId: jest.fn(),
+  };
+
+  const mockBillTypeRepo = {
+    findOne: jest.fn(),
+  };
+
+  const mockBillRepo = {
+    save: jest.fn(),
+    findOne: jest.fn(),
+    findAndCount: jest.fn(),
   };
 
   beforeEach(async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(TEST_DATE);
+
+    // Reset all mocks
+    mockUserService.findByUserId.mockReset();
+    mockBillTypeRepo.findOne.mockReset();
+    mockBillRepo.save.mockReset();
+    mockBillRepo.findOne.mockReset();
+    mockBillRepo.findAndCount.mockReset();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BillService,
         {
           provide: UserService,
-          useValue: mockData.userService,
+          useValue: mockUserService,
         },
         {
           provide: getRepositoryToken(BillTypeEntity),
-          useValue: mockData.billTypeRepo,
+          useValue: mockBillTypeRepo,
         },
         {
           provide: getRepositoryToken(BillEntity),
-          useValue: mockData.billRepo,
+          useValue: mockBillRepo,
         },
       ],
     }).compile();
 
     service = module.get<BillService>(BillService);
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2025-04-01 12:00:00'));
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
     jest.useRealTimers();
   });
 
@@ -78,363 +123,307 @@ describe('BillService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('【create】创建账单', () => {
-    const mockBill = createMockBill();
-
+  describe('create', () => {
     beforeEach(() => {
-      mockData.userService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-      mockData.billTypeRepo.findOne.mockResolvedValue({
-        id: 1,
-      });
+      mockUserService.findByUserId.mockResolvedValue(createMockUser());
+      mockBillTypeRepo.findOne.mockResolvedValue(createMockBillType());
+      mockBillRepo.save.mockResolvedValue(createMockBill());
     });
 
-    const createdBillDto = () => {
-      return {
-        payType: mockBill.payType,
-        amount: mockBill.amount,
-        date: mockBill.date,
-        typeId: mockBill.type.id,
-      };
-    };
+    it('should return error when user does not exist', async () => {
+      mockUserService.findByUserId.mockResolvedValue(null);
 
-    it('当前用户不存在', async () => {
-      mockData.userService.findByUserId.mockResolvedValue(null);
+      const result = await service.create(createBillDto(), TEST_UID);
 
-      const res = await service.create(createdBillDto(), testUid);
-
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户不存在',
         data: undefined,
       });
     });
 
-    it('当前账单分类不存在', async () => {
-      mockData.billTypeRepo.findOne.mockResolvedValue(null);
+    it('should return error when bill type does not exist', async () => {
+      mockBillTypeRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.create(createdBillDto(), testUid);
+      const result = await service.create(createBillDto(), TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前账单分类不存在',
         data: undefined,
       });
-      expect(mockData.billTypeRepo.findOne).toHaveBeenCalledTimes(1);
+      expect(mockBillTypeRepo.findOne).toHaveBeenCalledWith({
+        where: { id: TEST_BILL_TYPE_ID },
+      });
     });
 
-    it('新建账单异常', async () => {
-      mockData.billRepo.save.mockImplementation(() => {
-        throw new Error('新建账单异常');
-      });
+    it('should return error when creation fails', async () => {
+      mockBillRepo.save.mockRejectedValue(new Error('Creation failed'));
 
-      const res = await service.create(createdBillDto(), testUid);
+      const result = await service.create(createBillDto(), TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.error,
         message: '账单创建失败',
         data: undefined,
       });
     });
 
-    it('新建账单成功', async () => {
-      const res = await service.create(createdBillDto(), testUid);
+    it('should create bill successfully when data is valid', async () => {
+      const result = await service.create(createBillDto(), TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '账单创建成功',
         data: null,
       });
+      expect(mockBillRepo.save).toHaveBeenCalledWith({
+        payType: PayTypeEnum.PAID,
+        amount: TEST_AMOUNT,
+        date: TEST_DATE,
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
+        type: {
+          id: TEST_BILL_TYPE_ID,
+          name: 'test-bill-type',
+          payType: PayTypeEnum.PAID,
+        },
+        user: {
+          uid: TEST_UID,
+          username: 'test-user',
+        },
+      });
     });
   });
 
-  describe('【update】修改账单', () => {
-    const updatedBillDto = () => {
-      return {
-        id: 1,
-        payType: PayTypeEnum.PAID,
-        amount: 10000,
-        date: new Date(),
-        typeId: 1,
-      };
-    };
-
+  describe('update', () => {
     beforeEach(() => {
-      mockData.userService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-      mockData.billTypeRepo.findOne.mockResolvedValue({
-        id: 1,
-      });
-      mockData.billRepo.findOne.mockResolvedValue({
-        id: 1,
-        payType: PayTypeEnum.PAID,
-        amount: 10000, // ¥10.00
-        date: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        user: {
-          uid: 1,
-        },
-        type: {
-          id: 1,
-        },
-      });
+      mockUserService.findByUserId.mockResolvedValue(createMockUser());
+      mockBillTypeRepo.findOne.mockResolvedValue(createMockBillType());
+      mockBillRepo.findOne.mockResolvedValue(createMockBill());
+      mockBillRepo.save.mockResolvedValue(createMockBill());
     });
 
-    it('当前用户不存在', async () => {
-      mockData.userService.findByUserId.mockResolvedValue(null);
+    it('should return error when user does not exist', async () => {
+      mockUserService.findByUserId.mockResolvedValue(null);
 
-      const res = await service.update(updatedBillDto(), testUid);
-      expect(res).toEqual({
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户不存在',
         data: undefined,
       });
     });
 
-    it('修改的账单分类不存在', async () => {
-      mockData.billTypeRepo.findOne.mockResolvedValue(null);
+    it('should return error when bill type does not exist', async () => {
+      mockBillTypeRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.update(updatedBillDto(), testUid);
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前账单分类不存在',
         data: undefined,
       });
-
-      expect(mockData.billTypeRepo.findOne).toHaveBeenCalledTimes(1);
     });
-    it('被修改的账单不存在', async () => {
-      mockData.billRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.update(updatedBillDto(), testUid);
+    it('should return error when bill does not exist', async () => {
+      mockBillRepo.findOne.mockResolvedValue(null);
 
-      expect(res).toEqual({
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前账单不存在或已被删除',
         data: undefined,
       });
-      expect(mockData.billRepo.findOne).toHaveBeenCalledTimes(1);
     });
-    it('被修改的账单已经被删除', async () => {
-      mockData.billRepo.findOne.mockResolvedValue({
-        id: 1,
-        deletedAt: new Date(),
-        user: {
-          uid: 1,
-        },
-      });
 
-      const res = await service.update(updatedBillDto(), testUid);
+    it('should return error when bill is deleted', async () => {
+      mockBillRepo.findOne.mockResolvedValue(
+        createMockBill({ deletedAt: TEST_DATE }),
+      );
 
-      expect(res).toEqual({
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前账单不存在或已被删除',
         data: undefined,
       });
-      expect(mockData.billRepo.findOne).toHaveBeenCalledTimes(1);
     });
-    it('当前用户无修改权限', async () => {
-      mockData.billRepo.findOne.mockResolvedValue({
-        id: 1,
-        user: {
-          uid: 100,
-        },
-      });
 
-      const res = await service.update(updatedBillDto(), testUid);
+    it('should return error when user has no permission', async () => {
+      mockBillRepo.findOne.mockResolvedValue(
+        createMockBill({ user: { uid: 999 } }),
+      );
 
-      expect(res).toEqual({
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '暂无修改权限',
         data: undefined,
       });
-      expect(mockData.billRepo.findOne).toHaveBeenCalledTimes(1);
     });
-    it('账单修改异常', async () => {
-      mockData.billRepo.save.mockImplementation(() => {
-        throw new Error('修改账单异常');
-      });
 
-      const res = await service.update(updatedBillDto(), testUid);
+    it('should return error when update fails', async () => {
+      mockBillRepo.save.mockRejectedValue(new Error('Update failed'));
 
-      expect(res).toEqual({
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.error,
         message: '账单修改失败',
         data: undefined,
       });
-
-      expect(mockData.billRepo.save).toHaveBeenCalledTimes(1);
     });
-    it('账单修改成功', async () => {
-      const res = await service.update(updatedBillDto(), testUid);
 
-      expect(res).toEqual({
+    it('should update bill successfully when data is valid', async () => {
+      const result = await service.update(createUpdateBillDto(), TEST_UID);
+
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '账单修改成功',
         data: null,
       });
-
-      expect(mockData.billRepo.save).toHaveBeenCalledWith({
-        id: 1,
+      expect(mockBillRepo.save).toHaveBeenCalledWith({
+        id: TEST_BILL_ID,
         payType: PayTypeEnum.PAID,
-        amount: 10000,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        date: new Date(),
+        amount: TEST_AMOUNT,
+        date: TEST_DATE,
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
         type: {
-          id: 1,
+          id: TEST_BILL_TYPE_ID,
+          name: 'test-bill-type',
+          payType: PayTypeEnum.PAID,
         },
         user: {
-          uid: 1,
+          uid: TEST_UID,
+          username: 'test-user',
         },
       });
     });
   });
 
-  describe('【delete】删除账单', () => {
-    const mockBillId = 1;
+  describe('delete', () => {
     beforeEach(() => {
-      mockData.userService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-
-      mockData.billRepo.findOne.mockResolvedValue({
-        id: 1,
-        payType: PayTypeEnum.PAID,
-        amount: 10000, // ¥10.00
-        date: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        user: {
-          uid: 1,
-        },
-        type: {
-          id: 1,
-        },
-      });
+      mockUserService.findByUserId.mockResolvedValue(createMockUser());
+      mockBillRepo.findOne.mockResolvedValue(createMockBill());
+      mockBillRepo.save.mockResolvedValue(createMockBill());
     });
 
-    it('当前用户不存在', async () => {
-      mockData.userService.findByUserId.mockResolvedValue(null);
+    it('should return error when user does not exist', async () => {
+      mockUserService.findByUserId.mockResolvedValue(null);
 
-      const res = await service.delete(mockBillId, testUid);
+      const result = await service.delete(TEST_BILL_ID, TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户不存在',
         data: undefined,
       });
     });
 
-    it('当前账单不存在', async () => {
-      mockData.billRepo.findOne.mockResolvedValue(null);
+    it('should return error when bill does not exist', async () => {
+      mockBillRepo.findOne.mockResolvedValue(null);
 
-      const res = await service.delete(mockBillId, testUid);
+      const result = await service.delete(TEST_BILL_ID, TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前账单不存在',
         data: undefined,
       });
     });
 
-    it('账单删除失败', async () => {
-      mockData.billRepo.save.mockImplementation(() => {
-        throw new Error('账单删除异常');
-      });
+    it('should return error when deletion fails', async () => {
+      mockBillRepo.save.mockRejectedValue(new Error('Deletion failed'));
 
-      const res = await service.delete(mockBillId, testUid);
+      const result = await service.delete(TEST_BILL_ID, TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.error,
         message: '账单删除失败',
         data: undefined,
       });
     });
 
-    it('账单删除成功', async () => {
-      const res = await service.delete(mockBillId, testUid);
+    it('should delete bill successfully when user has permission', async () => {
+      const result = await service.delete(TEST_BILL_ID, TEST_UID);
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '账单删除成功',
         data: null,
       });
+      expect(mockBillRepo.save).toHaveBeenCalledWith({
+        ...createMockBill(),
+        deletedAt: TEST_DATE,
+      });
     });
   });
 
-  describe('【list】账单分页查询', () => {
-    const mockListQuery = {
-      pageInfo: {
-        pageSize: 10,
-        pageNo: 1,
-      },
-      queryData: {
-        date: new Date(),
-      },
-    };
+  describe('list', () => {
+    const mockBillList = [createMockBill(), createMockBill({ id: 2 })];
 
     beforeEach(() => {
-      mockData.userService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-
-      mockData.billRepo.findAndCount.mockResolvedValue([[], 10]);
+      mockUserService.findByUserId.mockResolvedValue(createMockUser());
+      mockBillRepo.findAndCount.mockResolvedValue([
+        mockBillList,
+        mockBillList.length,
+      ]);
     });
 
-    it('当前用户不存在', async () => {
-      mockData.userService.findByUserId.mockResolvedValue(null);
+    it('should return error when user does not exist', async () => {
+      mockUserService.findByUserId.mockResolvedValue(null);
 
-      const res = await service.list(
-        mockListQuery.pageInfo,
-        mockListQuery.queryData,
-        testUid,
+      const result = await service.list(
+        createListQuery().pageInfo,
+        createListQuery().queryData,
+        TEST_UID,
       );
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '当前用户不存在',
         data: undefined,
       });
     });
 
-    it('账单查询成功', async () => {
-      const res = await service.list(
-        mockListQuery.pageInfo,
-        mockListQuery.queryData,
-        testUid,
+    it('should return paginated bill list when user exists', async () => {
+      const result = await service.list(
+        createListQuery().pageInfo,
+        createListQuery().queryData,
+        TEST_UID,
       );
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '账单查询成功',
         data: {
-          list: [],
+          list: mockBillList,
           pageInfo: {
-            pageNo: mockListQuery.pageInfo.pageNo,
-            total: 10,
-            pageSize: mockListQuery.pageInfo.pageSize,
+            pageNo: TEST_PAGE_NO,
+            total: mockBillList.length,
+            pageSize: TEST_PAGE_SIZE,
           },
         },
       });
     });
 
-    it('账单查询失败', async () => {
-      mockData.billRepo.findAndCount.mockImplementation(() => {
-        throw new Error('账单查询异常');
-      });
+    it('should return error when query fails', async () => {
+      mockBillRepo.findAndCount.mockRejectedValue(new Error('Query failed'));
 
-      const res = await service.list(
-        mockListQuery.pageInfo,
-        mockListQuery.queryData,
-        testUid,
+      const result = await service.list(
+        createListQuery().pageInfo,
+        createListQuery().queryData,
+        TEST_UID,
       );
 
-      expect(res).toEqual({
+      expect(result).toEqual({
         code: ResultCodeEnum.error,
         message: '账单查询失败',
         data: undefined,
