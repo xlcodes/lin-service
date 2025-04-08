@@ -30,6 +30,10 @@ describe('BillTypeService', () => {
   };
 
   beforeEach(async () => {
+    mockUserService.findByUserId.mockResolvedValue({
+      uid: testUid,
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BillTypeService,
@@ -79,10 +83,6 @@ describe('BillTypeService', () => {
     });
 
     it('查询指定分页的数据', async () => {
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-
       mockBillTypeRepo.findAndCount.mockResolvedValue([[], 10]);
 
       const res = await service.list(testPageNo, testPageSize, testUid);
@@ -102,10 +102,6 @@ describe('BillTypeService', () => {
     });
 
     it('查询分页数据异常', async () => {
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
-
       mockBillTypeRepo.findAndCount.mockImplementation(() => {
         throw new Error('查询分页数据异常');
       });
@@ -136,9 +132,6 @@ describe('BillTypeService', () => {
 
     it('当前账单分类已经存在', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
       mockBillTypeRepo.findOne.mockResolvedValue(mockBillType);
 
       const res = await service.create(mockBillType, testUid);
@@ -156,10 +149,6 @@ describe('BillTypeService', () => {
         uid: 1,
         username: 'test-name',
       };
-
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: mockUser.uid,
-      });
 
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
@@ -184,10 +173,6 @@ describe('BillTypeService', () => {
         uid: 1,
         username: 'test-name',
       };
-
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: mockUser.uid,
-      });
 
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
@@ -231,9 +216,7 @@ describe('BillTypeService', () => {
 
     it('当前账单分类不存在', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
       const res = await service.update(mockBillType, testUid);
@@ -253,9 +236,7 @@ describe('BillTypeService', () => {
 
     it('被删除的账单分类不可修改', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         deletedAt: new Date(),
@@ -278,9 +259,7 @@ describe('BillTypeService', () => {
 
     it('当前用户无修改权限', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: 2 },
@@ -298,9 +277,7 @@ describe('BillTypeService', () => {
 
     it('账单分类修改异常', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -327,9 +304,7 @@ describe('BillTypeService', () => {
 
     it('账单分类修改成功', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -372,9 +347,7 @@ describe('BillTypeService', () => {
 
     it('账单分类不存在', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
       const res = await service.delete(testBillTypeId, testUid);
@@ -394,9 +367,7 @@ describe('BillTypeService', () => {
 
     it('账单分类已被删除', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -420,9 +391,7 @@ describe('BillTypeService', () => {
 
     it('当前用户暂无删除权限', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: 2 },
@@ -440,9 +409,7 @@ describe('BillTypeService', () => {
 
     it('账单删除异常', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -470,9 +437,6 @@ describe('BillTypeService', () => {
     it('账单删除成功', async () => {
       const mockBillType = createMockBillType();
 
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -530,9 +494,7 @@ describe('BillTypeService', () => {
 
     it('当前账单分类不存在', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
       const res = await service.recover(testBillTypeId, testUid);
@@ -552,9 +514,7 @@ describe('BillTypeService', () => {
 
     it('账单分类未被删除', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         user: { uid: testUid },
@@ -572,9 +532,7 @@ describe('BillTypeService', () => {
 
     it('账单删除异常', async () => {
       const mockBillType = createMockBillType();
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
+
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         deletedAt: new Date(),
@@ -603,9 +561,6 @@ describe('BillTypeService', () => {
     it('账单恢复成功', async () => {
       const mockBillType = createMockBillType();
 
-      mockUserService.findByUserId.mockResolvedValue({
-        uid: testUid,
-      });
       mockBillTypeRepo.findOne.mockResolvedValue({
         ...mockBillType,
         deletedAt: new Date(),

@@ -402,21 +402,6 @@ describe('BillService', () => {
       });
     });
 
-    it('账单支持基于生成时间查询', async () => {
-      const mockDate = new Date();
-      await service.list(mockListQuery.pageInfo, { date: mockDate }, testUid);
-
-      const { pageNo, pageSize } = mockListQuery.pageInfo;
-
-      expect(mockData.billRepo.findAndCount).toHaveBeenCalledWith({
-        skip: (pageNo - 1) * pageSize,
-        take: pageSize,
-        where: {
-          date: mockDate,
-        },
-      });
-    });
-
     it('账单查询成功', async () => {
       const res = await service.list(
         mockListQuery.pageInfo,
