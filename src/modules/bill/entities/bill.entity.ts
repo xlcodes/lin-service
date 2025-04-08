@@ -15,8 +15,9 @@ export class BillEntity {
     enum: PayTypeEnum,
     default: PayTypeEnum.PAID,
     comment: '账单类型',
+    name: 'pay_type',
   })
-  pay_type: string;
+  payType: PayTypeEnum;
 
   @Column({
     comment: '账单金额，单位分',

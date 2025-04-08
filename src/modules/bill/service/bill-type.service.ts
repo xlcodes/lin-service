@@ -147,6 +147,12 @@ export class BillTypeService {
     }
   }
 
+  /**
+   * 账单分类恢复接口
+   * 仅管理员可恢复
+   * @param bid
+   * @param uid
+   */
   async recover(bid: number, uid: number) {
     const user = await this.findUserByUid(uid);
 
