@@ -26,7 +26,7 @@ export class CaptchaService {
       await this.redisService.set(
         `${CacheEnum.CAPTCHA_CODE_KEY}${id}`,
         captchaInfo.text.toLowerCase(),
-        1000 * 60 * 5,
+        60 * 5,
       );
       return ResultData.ok(data, '验证码生成成功');
     } catch (err) {

@@ -5,6 +5,14 @@ import { RedisService } from '@/core/redis/redis.service';
 describe('CaptchaService', () => {
   let service: CaptchaService;
 
+  // Constants
+  const TEST_UUID = 'test-uuid';
+  const TEST_CODE = 'test-code';
+  const ERROR_CODE = 'error-code';
+  const REDIS_ERROR = new Error('Redis operation failed');
+  const CAPTCHA_EXPIRY = 300; // 5 minutes in seconds
+
+  // Mock services
   const mockRedis = {
     set: jest.fn(),
     get: jest.fn(),
@@ -12,6 +20,12 @@ describe('CaptchaService', () => {
   };
 
   beforeEach(async () => {
+    // Reset all mocks
+    jest.clearAllMocks();
+    mockRedis.set.mockReset();
+    mockRedis.get.mockReset();
+    mockRedis.del.mockReset();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CaptchaService,
@@ -25,81 +39,95 @@ describe('CaptchaService', () => {
     service = module.get<CaptchaService>(CaptchaService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('生成验证码', () => {
-    it('验证码生成失败', async () => {
-      const mockError = new Error('生成验证码失败');
-      mockRedis.set.mockImplementation(() => {
-        throw mockError;
+  describe('generateCode', () => {
+    it('should return error when failed to save captcha to redis', async () => {
+      mockRedis.set.mockRejectedValue(REDIS_ERROR);
+
+      const result = await service.generateCode();
+
+      expect(result).toEqual({
+        code: 500,
+        message: '生成验证码错误，请重试',
+        data: undefined,
       });
-
-      const res = await service.generateCode();
-
-      expect(res.data).toBeUndefined();
-      expect(res.code).toBe(500);
-      expect(res.message).toBe('生成验证码错误，请重试');
+      expect(mockRedis.set).toHaveBeenCalledTimes(1);
     });
 
-    it('验证码生成成功', async () => {
-      mockRedis.set.mockReturnValue(true);
-      const res = await service.generateCode();
-      expect(res.code).toBe(200);
-      expect(res.message).toBe('验证码生成成功');
+    it('should return success with captcha data when generation succeeds', async () => {
+      mockRedis.set.mockResolvedValue(true);
 
-      expect(mockRedis.set).toHaveBeenCalledTimes(1);
+      const result = await service.generateCode();
+
+      expect(result.code).toBe(200);
+      expect(result.message).toBe('验证码生成成功');
+      expect(result.data).toBeDefined();
+      expect((result.data as any).uuid).toBeDefined();
+      expect((result.data as any).img).toBeDefined();
+
+      // Verify redis set was called with correct expiry
+      expect(mockRedis.set).toHaveBeenCalledWith(
+        expect.stringContaining('captcha_codes:'),
+        expect.any(String),
+        CAPTCHA_EXPIRY,
+      );
     });
   });
 
-  describe('校验验证码', () => {
-    it('验证码校验失败', async () => {
-      const testData = {
-        code: 'test-code',
-        uuid: 'test-uuid',
-      };
+  describe('verify', () => {
+    it('should return false when code does not match stored value', async () => {
+      mockRedis.get.mockResolvedValue(TEST_CODE);
 
-      mockRedis.get.mockReturnValue(testData.code);
+      const result = await service.verify(ERROR_CODE, TEST_UUID);
 
-      const res = await service.verify('error-code', testData.uuid);
-      expect(res).toBeFalsy();
-      expect(mockRedis.get).toHaveBeenCalledTimes(1);
+      expect(result).toBe(false);
+      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
-    it('验证码校验成功', async () => {
-      const testData = {
-        code: 'test-code',
-        uuid: 'test-uuid',
-      };
+    it('should return false when no code is found for the uuid', async () => {
+      mockRedis.get.mockResolvedValue(null);
 
-      mockRedis.get.mockReturnValue(testData.code);
+      const result = await service.verify(TEST_CODE, TEST_UUID);
 
-      const res = await service.verify(testData.code, testData.uuid);
-      expect(res).toBeTruthy();
-      expect(mockRedis.get).toHaveBeenCalledTimes(1);
-      expect(mockRedis.del).toHaveBeenCalledTimes(1);
+      expect(result).toBe(false);
+      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
-    it('验证码校验异常', async () => {
-      const mockError = new Error('生成验证码失败');
-      const testData = {
-        code: 'test-code',
-        uuid: 'test-uuid',
-      };
-      mockRedis.get.mockImplementation(() => {
-        throw mockError;
-      });
+    it('should return true and delete key when code matches', async () => {
+      mockRedis.get.mockResolvedValue(TEST_CODE);
+      mockRedis.del.mockResolvedValue(true);
 
-      const res = await service.verify(testData.code, testData.uuid);
+      const result = await service.verify(TEST_CODE, TEST_UUID);
 
-      expect(res).toBeFalsy();
-      expect(mockRedis.get).toHaveBeenCalledTimes(1);
-      expect(mockRedis.del).not.toBeCalled();
+      expect(result).toBe(true);
+      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.del).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+    });
+
+    it('should return false when redis get operation fails', async () => {
+      mockRedis.get.mockRejectedValue(REDIS_ERROR);
+
+      const result = await service.verify(TEST_CODE, TEST_UUID);
+
+      expect(result).toBe(false);
+      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.del).not.toHaveBeenCalled();
+    });
+
+    it('should still return true even if delete operation fails', async () => {
+      mockRedis.get.mockResolvedValue(TEST_CODE);
+      mockRedis.del.mockRejectedValue(REDIS_ERROR);
+
+      const result = await service.verify(TEST_CODE, TEST_UUID);
+
+      expect(result).toBe(false);
+      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.del).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
     });
   });
 });
