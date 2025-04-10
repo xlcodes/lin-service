@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 import * as ms from 'ms';
+import { AxiosService } from '@/core/axios/axios.service';
 
 @Injectable()
 export class UserService {
@@ -32,6 +33,9 @@ export class UserService {
 
   @Inject(ConfigService)
   private readonly configService: ConfigService;
+
+  @Inject(AxiosService)
+  private readonly axiosService: AxiosService;
 
   /**
    * 生成基于用户信息的token
@@ -177,6 +181,75 @@ export class UserService {
     });
 
     return ResultData.ok({ token }, '用户登录成功');
+  }
+
+  /**
+   * 微信登录
+   * @param code 微信授权码，有效期10分钟
+   */
+  async loginWechat(code: string) {
+    // 获取 openid
+    const wechatUserInfo = await this.axiosService.getWechatUserInfo(code);
+    const { openid = '' } = wechatUserInfo || {};
+    const id = uuid();
+
+    if (!openid) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '微信登录失败',
+      );
+    }
+
+    // 基于 openid 查询用户
+    const user = await this.userRepository.findOneBy({
+      openid,
+    });
+
+    if (user) {
+      const token = await this.createToken({
+        userId: user.uid,
+        uuid: id,
+      });
+
+      return ResultData.ok({ token }, '微信用户登录成功');
+    }
+
+    // 执行注册逻辑
+    const newUser = await this.registerByWechat(openid);
+
+    if (!newUser) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '登录异常，请稍后再试！',
+      );
+    }
+
+    const newToken = await this.createToken({
+      userId: newUser.uid,
+      uuid: id,
+    });
+
+    return ResultData.ok({ token: newToken }, '微信用户登录成功');
+  }
+
+  registerByWechat(openId: string) {
+    const user = new UserEntity();
+
+    const time = Date.now();
+
+    user.openid = openId;
+    user.username = `wechat_${time}`;
+    user.nickName = `wechat_${time}`;
+    user.avatarUrl = '';
+    user.password = md5(this.configService.get('user_init_pwd') || '123456');
+    user.createdAt = new Date();
+    user.updatedAt = new Date();
+    try {
+      return this.userRepository.save(user);
+    } catch (err) {
+      this.logger.error(err);
+      return null;
+    }
   }
 
   /**

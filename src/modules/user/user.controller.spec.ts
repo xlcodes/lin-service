@@ -7,9 +7,24 @@ import { ResultCodeEnum } from '@/core/common/constant';
 describe('UserController', () => {
   let controller: UserController;
 
+  const TEST_CODE = 'test-code';
+  const TEST_TOKEN = 'test-token';
+  const TEST_USER_NAME = 'test-user';
+  const TEST_USER_PWD = 'test-pwd';
+  const TEST_USER_UUID = 'test-uuid';
+
+  const createMockUser = (options = {}) => ({
+    username: TEST_USER_NAME,
+    password: TEST_USER_PWD,
+    uuid: TEST_USER_UUID,
+    code: TEST_CODE,
+    ...options,
+  });
+
   const mockUserService = {
     register: jest.fn(),
     login: jest.fn(),
+    loginWechat: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -34,12 +49,7 @@ describe('UserController', () => {
       ResultData.ok(null, '用户注册成功'),
     );
 
-    const mockUser = {
-      username: 'test',
-      password: '123456',
-      uuid: 'test-uuid',
-      code: '123456',
-    };
+    const mockUser = createMockUser();
 
     const res = await controller.register(mockUser);
 
@@ -51,23 +61,37 @@ describe('UserController', () => {
     mockUserService.login.mockResolvedValue(
       ResultData.ok(
         {
-          token: 'test-token',
+          token: TEST_TOKEN,
         },
         '用户登录成功',
       ),
     );
 
-    const user = {
-      username: 'test-user',
-      password: 'test-pwd',
-    };
-
-    const res = await controller.login(user);
+    const res = await controller.login(createMockUser());
 
     expect(res).toEqual({
       code: ResultCodeEnum.success,
       message: '用户登录成功',
-      data: { token: 'test-token' },
+      data: { token: TEST_TOKEN },
+    });
+  });
+
+  it('微信用户登录', async () => {
+    mockUserService.loginWechat.mockResolvedValue(
+      ResultData.ok(
+        {
+          token: TEST_TOKEN,
+        },
+        '用户登录成功',
+      ),
+    );
+
+    const res = await controller.wechatLogin(TEST_CODE);
+
+    expect(res).toEqual({
+      code: ResultCodeEnum.success,
+      message: '用户登录成功',
+      data: { token: TEST_TOKEN },
     });
   });
 });

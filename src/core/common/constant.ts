@@ -4,6 +4,8 @@ export const REQUIRE_LOGIN = 'REQUIRE_LOGIN';
 
 export const REQUIRE_IS_ADMIN = 'REQUIRE_IS_ADMIN';
 
+export const WECHAT_BASE_URL = `https://api.weixin.qq.com/sns/jscode2session`;
+
 export enum ResultCodeEnum {
   success = 200,
   error = 400,

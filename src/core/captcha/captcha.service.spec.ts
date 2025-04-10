@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CaptchaService } from './captcha.service';
 import { RedisService } from '@/core/redis/redis.service';
+import { CacheEnum } from '@/core/common/constant';
 
 describe('CaptchaService', () => {
   let service: CaptchaService;
@@ -70,7 +71,7 @@ describe('CaptchaService', () => {
 
       // Verify redis set was called with correct expiry
       expect(mockRedis.set).toHaveBeenCalledWith(
-        expect.stringContaining('captcha_codes:'),
+        expect.stringContaining(`${CacheEnum.CAPTCHA_CODE_KEY}`),
         expect.any(String),
         CAPTCHA_EXPIRY,
       );
@@ -84,7 +85,9 @@ describe('CaptchaService', () => {
       const result = await service.verify(ERROR_CODE, TEST_UUID);
 
       expect(result).toBe(false);
-      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
@@ -94,7 +97,9 @@ describe('CaptchaService', () => {
       const result = await service.verify(TEST_CODE, TEST_UUID);
 
       expect(result).toBe(false);
-      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
@@ -105,8 +110,12 @@ describe('CaptchaService', () => {
       const result = await service.verify(TEST_CODE, TEST_UUID);
 
       expect(result).toBe(true);
-      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
-      expect(mockRedis.del).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
+      expect(mockRedis.del).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
     });
 
     it('should return false when redis get operation fails', async () => {
@@ -115,7 +124,9 @@ describe('CaptchaService', () => {
       const result = await service.verify(TEST_CODE, TEST_UUID);
 
       expect(result).toBe(false);
-      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
 
@@ -126,8 +137,12 @@ describe('CaptchaService', () => {
       const result = await service.verify(TEST_CODE, TEST_UUID);
 
       expect(result).toBe(false);
-      expect(mockRedis.get).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
-      expect(mockRedis.del).toHaveBeenCalledWith(`captcha_codes:${TEST_UUID}`);
+      expect(mockRedis.get).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
+      expect(mockRedis.del).toHaveBeenCalledWith(
+        `${CacheEnum.CAPTCHA_CODE_KEY}${TEST_UUID}`,
+      );
     });
   });
 });

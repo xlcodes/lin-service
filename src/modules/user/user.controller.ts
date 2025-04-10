@@ -1,4 +1,11 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  BadRequestException,
+  Get,
+  Query,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { RegisterUserDto } from '@/modules/user/dto/register-user.dto';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -20,5 +27,15 @@ export class UserController {
   @Post('login')
   async login(@Body() dto: LoginUserDto) {
     return await this.userService.login(dto);
+  }
+
+  @ApiOperation({ summary: '微信登录' })
+  @Get('wechat/login')
+  async wechatLogin(@Query('code') code: string) {
+    if (!code || typeof code !== 'string') {
+      throw new BadRequestException('code参数错误');
+    }
+
+    return await this.userService.loginWechat(code);
   }
 }

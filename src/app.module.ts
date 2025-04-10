@@ -22,6 +22,7 @@ import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
 import { IsAdminGuard } from '@/core/guards/isAdmin.guard';
+import { AxiosModule } from './core/axios/axios.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { IsAdminGuard } from '@/core/guards/isAdmin.guard';
     BillModule,
     PermissionModule,
     RoleModule,
+    AxiosModule,
   ],
   controllers: [AppController, BillTypeController],
   providers: [

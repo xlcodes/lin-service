@@ -48,6 +48,12 @@ export class UserEntity {
   })
   isAdmin: string;
 
+  @Column({
+    comment: '微信用户唯一标识',
+    default: '',
+  })
+  openid: string;
+
   @OneToMany(() => BillTypeEntity, (billType) => billType.id, {
     onDelete: 'DEFAULT',
   })
