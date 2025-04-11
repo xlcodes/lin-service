@@ -25,8 +25,8 @@ describe('PermissionService', () => {
     return {
       name: TEST_NAME,
       description: TEST_DESCRIPTION,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
       deletedAt: null,
       ...options,
     };
@@ -238,12 +238,24 @@ describe('PermissionService', () => {
 
       const mockData = createMockPermission();
 
+      const updateTime = new Date('2025-04-04 12:00:00');
+      jest.setSystemTime(updateTime);
+
       const result = await service.update(TEST_ID, mockData, TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
         message: '更新权限成功',
         data: null,
+      });
+
+      expect(mockPermissionRepo.save).toHaveBeenCalledWith({
+        id: TEST_ID,
+        name: mockData.name,
+        description: mockData.description,
+        createdAt: mockData.createdAt,
+        updatedAt: updateTime,
+        deletedAt: null,
       });
     });
   });
@@ -292,6 +304,9 @@ describe('PermissionService', () => {
     });
 
     it('should delete permission', async () => {
+      const updateTime = new Date('2025-04-04 12:00:00');
+      jest.setSystemTime(updateTime);
+
       const result = await service.remove(TEST_ID, TEST_USER_ID);
 
       expect(result).toEqual({
@@ -303,6 +318,7 @@ describe('PermissionService', () => {
         createMockPermission({
           id: TEST_ID,
           deletedAt: new Date(),
+          updatedAt: updateTime,
         }),
       );
     });

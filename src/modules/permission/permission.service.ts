@@ -150,6 +150,7 @@ export class PermissionService {
 
     found.name = dto.name;
     found.description = dto.description;
+    found.updatedAt = new Date();
 
     try {
       await this.perRepo.save(found);
@@ -184,6 +185,7 @@ export class PermissionService {
     }
 
     found.deletedAt = new Date();
+    found.updatedAt = new Date();
 
     try {
       await this.perRepo.save(found);

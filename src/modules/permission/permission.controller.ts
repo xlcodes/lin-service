@@ -23,11 +23,8 @@ export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Post()
-  create(
-    @Body() createPermissionDto: CreatePermissionDto,
-    @UserInfo('uid') uid: number,
-  ) {
-    return this.permissionService.create(createPermissionDto, uid);
+  create(@Body() dto: CreatePermissionDto, @UserInfo('uid') uid: number) {
+    return this.permissionService.create(dto, uid);
   }
 
   @Get()
@@ -57,10 +54,10 @@ export class PermissionController {
   @Patch(':id')
   update(
     @Param('id', generateParseIntPipe('id')) id: number,
-    @Body() updatePermissionDto: UpdatePermissionDto,
+    @Body() dto: UpdatePermissionDto,
     @UserInfo('uid') uid: number,
   ) {
-    return this.permissionService.update(id, updatePermissionDto, uid);
+    return this.permissionService.update(id, dto, uid);
   }
 
   @Delete(':id')
