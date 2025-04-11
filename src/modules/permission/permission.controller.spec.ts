@@ -13,13 +13,14 @@ describe('PermissionController', () => {
   const TEST_PAGE_NO = 1;
   const TEST_PAGE_SIZE = 10;
   const TEST_TOTAL = 10;
+  const TEST_DATE = new Date('2025-04-01 12:00:00');
 
   const createMockPermission = (options = {}) => {
     return {
       name: TEST_NAME,
       description: TEST_DESCRIPTION,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: TEST_DATE,
+      updatedAt: TEST_DATE,
       deletedAt: null,
       ...options,
     };

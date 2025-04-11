@@ -10,6 +10,7 @@ export class PermissionEntity {
   @Column({
     comment: '权限名称',
     length: 50,
+    unique: true,
   })
   name: string;
 

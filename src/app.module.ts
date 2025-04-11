@@ -7,23 +7,20 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { RedisModule } from './core/redis/redis.module';
 import { utilities, WinstonModule } from 'nest-winston';
 import { transports, format } from 'winston';
-import { UserModule } from './modules/user/user.module';
-import { CaptchaModule } from './core/captcha/captcha.module';
+import { UserModule } from '@/modules/user/user.module';
+import { CaptchaModule } from '@/core/captcha/captcha.module';
 import 'winston-daily-rotate-file';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { LoginGuard } from '@/core/guards/login.guard';
-import { BillModule } from './modules/bill/bill.module';
-import { BillTypeService } from './modules/bill/service/bill-type.service';
-import { BillTypeController } from './modules/bill/controller/bill-type.controller';
-import { UserEntity } from '@/modules/user/entities/user.entity';
-import { BillEntity } from '@/modules/bill/entities/bill.entity';
+import { BillModule } from '@/modules/bill/bill.module';
+import { BillTypeService } from '@/modules/bill/service/bill-type.service';
+import { BillTypeController } from '@/modules/bill/controller/bill-type.controller';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
-import { PermissionModule } from './modules/permission/permission.module';
-import { RoleModule } from './modules/role/role.module';
+import { PermissionModule } from '@/modules/permission/permission.module';
+import { RoleModule } from '@/modules/role/role.module';
 import { IsAdminGuard } from '@/core/guards/isAdmin.guard';
-import { AxiosModule } from './core/axios/axios.module';
-import { PermissionEntity } from '@/modules/permission/entities/permission.entity';
+import { AxiosModule } from '@/core/axios/axios.module';
 
 @Module({
   imports: [
@@ -49,12 +46,7 @@ import { PermissionEntity } from '@/modules/permission/entities/permission.entit
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([
-      UserEntity,
-      BillEntity,
-      BillTypeEntity,
-      PermissionEntity,
-    ]),
+    TypeOrmModule.forFeature([BillTypeEntity]),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

@@ -17,6 +17,7 @@ export class RoleEntity {
   @Column({
     comment: '角色名称',
     length: 50,
+    unique: true,
   })
   name: string;
 
