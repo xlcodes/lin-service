@@ -23,6 +23,7 @@ import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
 import { IsAdminGuard } from '@/core/guards/isAdmin.guard';
 import { AxiosModule } from './core/axios/axios.module';
+import { PermissionEntity } from '@/modules/permission/entities/permission.entity';
 
 @Module({
   imports: [
@@ -48,7 +49,12 @@ import { AxiosModule } from './core/axios/axios.module';
       },
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([UserEntity, BillEntity, BillTypeEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      BillEntity,
+      BillTypeEntity,
+      PermissionEntity,
+    ]),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

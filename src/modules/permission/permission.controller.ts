@@ -1,34 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  DefaultValuePipe,
+} from '@nestjs/common';
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { generateParseIntPipe } from '@/core/utils/custom-pipe';
+import { ApiTags } from '@nestjs/swagger';
+import { IsAdmin, UserInfo } from '@/core/decorator/custom.decorator';
 
+@ApiTags('权限标识模块')
 @Controller('permission')
+@IsAdmin()
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Post()
-  create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionService.create(createPermissionDto);
+  create(
+    @Body() createPermissionDto: CreatePermissionDto,
+    @UserInfo('uid') uid: number,
+  ) {
+    return this.permissionService.create(createPermissionDto, uid);
   }
 
   @Get()
-  findAll() {
-    return this.permissionService.findAll();
+  findAll(
+    @Query('pageNo', new DefaultValuePipe(1), generateParseIntPipe('pageNo'))
+    pageNo: number,
+    @Query(
+      'pageSize',
+      new DefaultValuePipe(20),
+      generateParseIntPipe('pageSize'),
+    )
+    pageSize: number,
+    @UserInfo('uid')
+    uid: number,
+  ) {
+    return this.permissionService.findAll(pageNo, pageSize, uid);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.permissionService.findOne(+id);
+  findOne(
+    @Param('id', generateParseIntPipe('id')) id: number,
+    @UserInfo('uid') uid: number,
+  ) {
+    return this.permissionService.findOne(id, uid);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
-    return this.permissionService.update(+id, updatePermissionDto);
+  update(
+    @Param('id', generateParseIntPipe('id')) id: number,
+    @Body() updatePermissionDto: UpdatePermissionDto,
+    @UserInfo('uid') uid: number,
+  ) {
+    return this.permissionService.update(id, updatePermissionDto, uid);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.permissionService.remove(+id);
+  remove(
+    @Param('id', generateParseIntPipe('id')) id: number,
+    @UserInfo('uid') uid: number,
+  ) {
+    return this.permissionService.remove(id, uid);
   }
 }
