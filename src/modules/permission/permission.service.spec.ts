@@ -6,6 +6,7 @@ import { PermissionEntity } from '@/modules/permission/entities/permission.entit
 import { UserService } from '@/modules/user/user.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { IsNull } from 'typeorm';
+import { ResultData } from '@/core/utils/result';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -15,7 +16,6 @@ describe('PermissionService', () => {
   const TEST_DESCRIPTION = 'test-description';
   const TEST_DATE = new Date('2025-04-01 12:00:00');
   const TEST_USER_ID = 5;
-  const TEST_USER = { id: TEST_USER_ID, name: 'test-user' };
   const TEST_PAGE_NO = 1;
   const TEST_PAGE_SIZE = 10;
   const TEST_TOTAL = 10;
@@ -49,7 +49,7 @@ describe('PermissionService', () => {
 
   // Mock services
   const mockUserService = {
-    findByUserId: jest.fn(),
+    validateUser: jest.fn(),
   };
 
   const mockPermissionRepo = {
@@ -66,7 +66,7 @@ describe('PermissionService', () => {
     jest.useFakeTimers();
     jest.setSystemTime(TEST_DATE);
 
-    mockUserService.findByUserId.mockReset().mockReturnValue(TEST_USER);
+    mockUserService.validateUser.mockReset().mockReturnValue(null);
     mockPermissionRepo.save.mockReset();
     mockPermissionRepo.findOne
       .mockReset()
@@ -104,11 +104,16 @@ describe('PermissionService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create 创建权限', () => {
+  const validateUser = async <T>(callback: () => Promise<T>) => {
     it('should return not user when user not found', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
+      mockUserService.validateUser.mockResolvedValue(
+        ResultData.exceptionFail(
+          ResultCodeEnum.exception_error,
+          '当前用户不存在',
+        ),
+      );
 
-      const result = await service.create(createMockPermission(), TEST_USER_ID);
+      const result = await callback();
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -116,7 +121,13 @@ describe('PermissionService', () => {
         data: undefined,
       });
 
-      expect(mockUserService.findByUserId).toHaveBeenCalledWith(TEST_USER_ID);
+      expect(mockUserService.validateUser).toHaveBeenCalledWith(TEST_USER_ID);
+    });
+  };
+
+  describe('create 创建权限', () => {
+    validateUser(async () => {
+      return await service.create(createMockPermission(), TEST_USER_ID);
     });
 
     it('should return error when permission already exists', async () => {
@@ -174,20 +185,12 @@ describe('PermissionService', () => {
   });
 
   describe('update 更新权限', () => {
-    it('should return not user when user not found', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.update(
+    validateUser(async () => {
+      return await service.update(
         TEST_ID,
         createMockPermission(),
         TEST_USER_ID,
       );
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
-      });
     });
 
     it('should return error when permission not found', async () => {
@@ -261,16 +264,8 @@ describe('PermissionService', () => {
   });
 
   describe('delete 删除权限', () => {
-    it('should return user not found when user is not found', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.remove(TEST_ID, TEST_ID);
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
-      });
+    validateUser(async () => {
+      return await service.remove(TEST_ID, TEST_USER_ID);
     });
 
     it('should return error when permission is not found', async () => {
@@ -325,16 +320,8 @@ describe('PermissionService', () => {
   });
 
   describe('findOne 查询权限详情', () => {
-    it('should return error when user is not found', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.findOne(TEST_ID, TEST_USER_ID);
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
-      });
+    validateUser(async () => {
+      return await service.findOne(TEST_ID, TEST_USER_ID);
     });
 
     it('should return error when find permission is error', async () => {
@@ -390,20 +377,8 @@ describe('PermissionService', () => {
   });
 
   describe('findAll 查询权限', () => {
-    it('should return error when user is not found', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.findAll(
-        TEST_PAGE_NO,
-        TEST_PAGE_SIZE,
-        TEST_USER_ID,
-      );
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
-      });
+    validateUser(async () => {
+      return await service.findAll(TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_USER_ID);
     });
 
     it('should return error when find permission is error', async () => {

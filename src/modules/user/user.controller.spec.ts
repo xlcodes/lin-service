@@ -3,6 +3,7 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
+import { BadRequestException } from '@nestjs/common';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -76,22 +77,42 @@ describe('UserController', () => {
     });
   });
 
-  it('微信用户登录', async () => {
-    mockUserService.loginWechat.mockResolvedValue(
-      ResultData.ok(
-        {
-          token: TEST_TOKEN,
-        },
-        '用户登录成功',
-      ),
-    );
+  describe('wechatLogin', () => {
+    it('微信用户登录', async () => {
+      mockUserService.loginWechat.mockResolvedValue(
+        ResultData.ok(
+          {
+            token: TEST_TOKEN,
+          },
+          '用户登录成功',
+        ),
+      );
 
-    const res = await controller.wechatLogin(TEST_CODE);
+      const res = await controller.wechatLogin(TEST_CODE);
 
-    expect(res).toEqual({
-      code: ResultCodeEnum.success,
-      message: '用户登录成功',
-      data: { token: TEST_TOKEN },
+      expect(res).toEqual({
+        code: ResultCodeEnum.success,
+        message: '用户登录成功',
+        data: { token: TEST_TOKEN },
+      });
+    });
+
+    it('微信用户登录 code 为空字符串', async () => {
+      await expect(controller.wechatLogin('')).rejects.toThrow(
+        new BadRequestException('code参数错误'),
+      );
+    });
+
+    it('微信用户登录 code 为 undefined', async () => {
+      await expect(controller.wechatLogin(undefined)).rejects.toThrow(
+        new BadRequestException('code参数错误'),
+      );
+    });
+
+    it('微信用户登录 code 为 null', async () => {
+      await expect(controller.wechatLogin(null)).rejects.toThrow(
+        new BadRequestException('code参数错误'),
+      );
     });
   });
 });

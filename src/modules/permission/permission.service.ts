@@ -19,13 +19,10 @@ export class PermissionService {
   private readonly userService: UserService;
 
   async create(dto: CreatePermissionDto, uid: number) {
-    const user = await this.userService.findByUserId(uid);
+    const userNotFound = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (userNotFound) {
+      return userNotFound;
     }
 
     const found = await this.perRepo.findOne({
@@ -58,13 +55,10 @@ export class PermissionService {
   }
 
   async findAll(pageNo: number, pageSize: number, uid: number) {
-    const user = await this.userService.findByUserId(uid);
+    const userNotFound = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (userNotFound) {
+      return userNotFound;
     }
 
     const skipCount = (pageNo - 1) * pageSize;
@@ -96,13 +90,10 @@ export class PermissionService {
   }
 
   async findOne(id: number, uid: number) {
-    const user = await this.userService.findByUserId(uid);
+    const userNotFound = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (userNotFound) {
+      return userNotFound;
     }
 
     try {
@@ -126,13 +117,10 @@ export class PermissionService {
   }
 
   async update(id: number, dto: UpdatePermissionDto, uid: number) {
-    const user = await this.userService.findByUserId(uid);
+    const userNotFound = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (userNotFound) {
+      return userNotFound;
     }
 
     const found = await this.perRepo.findOne({
@@ -162,13 +150,10 @@ export class PermissionService {
   }
 
   async remove(id: number, uid: number) {
-    const user = await this.userService.findByUserId(uid);
+    const userNotFound = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (userNotFound) {
+      return userNotFound;
     }
 
     const found = await this.perRepo.findOne({

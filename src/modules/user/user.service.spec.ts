@@ -9,6 +9,7 @@ import { RedisService } from '@/core/redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AxiosService } from '@/core/axios/axios.service';
+import { IsNull } from 'typeorm';
 
 describe('UserService', () => {
   let service: UserService;
@@ -143,6 +144,28 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('validateUser 检测用户是否存在', () => {
+    it('should return user not found error when user dose not exist', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      const result = await service.validateUser(TEST_UID);
+
+      expect(result).toEqual({
+        code: ResultCodeEnum.exception_error,
+        message: '当前用户不存在',
+        data: undefined,
+      });
+    });
+
+    it('should return null when user exists', async () => {
+      mockUserRepo.findOne.mockResolvedValue(createMockUser());
+
+      const result = await service.validateUser(TEST_UID);
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('createToken', () => {
     const tokenPayload = { userId: TEST_UID, uuid: TEST_UUID };
 
@@ -216,7 +239,7 @@ describe('UserService', () => {
 
       expect(result).toBeNull();
       expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { uid: TEST_UID },
+        where: { uid: TEST_UID, deletedAt: IsNull() },
         select: { password: false },
       });
     });
@@ -310,6 +333,7 @@ describe('UserService', () => {
       });
       expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
         username: TEST_USERNAME,
+        deletedAt: IsNull(),
       });
     });
 
@@ -415,7 +439,7 @@ describe('UserService', () => {
 
       expect(result).toBeNull();
       expect(mockUserRepo.findOne).toHaveBeenCalledWith({
-        where: { uid: TEST_UID },
+        where: { uid: TEST_UID, deletedAt: IsNull() },
         select: { password: false },
       });
     });

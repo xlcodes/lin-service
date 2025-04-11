@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '@/modules/user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ResultData } from '@/core/utils/result';
 import { CacheEnum, ResultCodeEnum } from '@/core/common/constant';
@@ -96,6 +96,7 @@ export class UserService {
     const foundUser = await this.userRepository.findOne({
       where: {
         uid: res.userId,
+        deletedAt: IsNull(),
       },
       select: {
         password: false,
@@ -157,6 +158,7 @@ export class UserService {
   async login(dto: LoginUserDto) {
     const user = await this.userRepository.findOneBy({
       username: dto.username,
+      deletedAt: IsNull(),
     });
 
     if (!user) {
@@ -203,6 +205,7 @@ export class UserService {
     // 基于 openid 查询用户
     const user = await this.userRepository.findOneBy({
       openid,
+      deletedAt: IsNull(),
     });
 
     if (user) {
@@ -260,6 +263,7 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: {
         uid,
+        deletedAt: IsNull(),
       },
       select: {
         password: false,
@@ -290,5 +294,23 @@ export class UserService {
     }
 
     return user.isAdmin;
+  }
+
+  /**
+   * 检测当前用户是否存在
+   * @param uid 用户唯一标识
+   * @return {ResultData | null} null 则说明用户存在
+   */
+  async validateUser(uid: number): Promise<ResultData<unknown> | null> {
+    const foundUser = await this.findByUserId(uid);
+
+    if (!foundUser) {
+      return ResultData.exceptionFail(
+        ResultCodeEnum.exception_error,
+        '当前用户不存在',
+      );
+    }
+
+    return null;
   }
 }
