@@ -7,6 +7,7 @@ import { UserService } from '@/modules/user/user.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { IsNull } from 'typeorm';
 import { ResultData } from '@/core/utils/result';
+import { TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_TOTAL } from '@/test/test.constant';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -16,9 +17,6 @@ describe('PermissionService', () => {
   const TEST_DESCRIPTION = 'test-description';
   const TEST_DATE = new Date('2025-04-01 12:00:00');
   const TEST_USER_ID = 5;
-  const TEST_PAGE_NO = 1;
-  const TEST_PAGE_SIZE = 10;
-  const TEST_TOTAL = 10;
   const TEST_ERROR = new Error('test-error');
 
   const createMockPermission = (options = {}) => {

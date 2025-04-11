@@ -6,6 +6,7 @@ import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 import { ResultCodeEnum } from '@/core/common/constant';
+import { TEST_PAGE_SIZE, TEST_PAGE_NO } from '@/test/test.constant';
 
 describe('BillService', () => {
   let service: BillService;
@@ -14,8 +15,6 @@ describe('BillService', () => {
   const TEST_BILL_TYPE_ID = 1;
   const TEST_AMOUNT = 10000; // ¥10.00
   const TEST_DATE = new Date('2025-04-01 12:00:00');
-  const TEST_PAGE_NO = 1;
-  const TEST_PAGE_SIZE = 10;
 
   // Mock data generators
   const createMockUser = (overrides = {}) => ({

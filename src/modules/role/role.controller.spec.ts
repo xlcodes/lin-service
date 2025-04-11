@@ -3,6 +3,7 @@ import { RoleController } from './role.controller';
 import { RoleService } from './role.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { CreateRoleDto } from '@/modules/role/dto/create-role.dto';
+import { TEST_TOTAL, TEST_PAGE_SIZE, TEST_PAGE_NO } from '@/test/test.constant';
 
 describe('RoleController', () => {
   let controller: RoleController;
@@ -12,9 +13,6 @@ describe('RoleController', () => {
   const TEST_ROLE_DESC = 'test-role-desc';
   const TEST_DATE = new Date('2025-04-01 12:00:00');
   const TEST_USER_ID = 5;
-  const TEST_PAGE_NO = 1;
-  const TEST_PAGE_SIZE = 5;
-  const TEST_TOTAL = 5;
 
   const createMockRole = (options = {}) => {
     return {

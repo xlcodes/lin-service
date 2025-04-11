@@ -5,13 +5,12 @@ import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { UserService } from '@/modules/user/user.service';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 import { ResultCodeEnum } from '@/core/common/constant';
+import { TEST_PAGE_NO, TEST_PAGE_SIZE } from '@/test/test.constant';
 
 describe('BillTypeService', () => {
   let service: BillTypeService;
   const TEST_UID = 1;
   const TEST_BILL_TYPE_ID = 1;
-  const TEST_PAGE_NO = 1;
-  const TEST_PAGE_SIZE = 10;
 
   const createMockBillType = (overrides = {}) => ({
     id: TEST_BILL_TYPE_ID,
