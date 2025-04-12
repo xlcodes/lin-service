@@ -64,12 +64,10 @@ export class BillTypeService {
   }
 
   async update(dto: UpdateBillTypeDto, uid: number) {
-    const user = await this.findUserByUid(uid);
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    const notFoundUser = await this.userService.validateUser(uid);
+
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     const billType = await this.billTypeRepository.findOne({
@@ -107,12 +105,10 @@ export class BillTypeService {
   }
 
   async delete(bid: number, uid: number) {
-    const user = await this.findUserByUid(uid);
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    const notFoundUser = await this.userService.validateUser(uid);
+
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     const billType = await this.billTypeRepository.findOne({
@@ -154,20 +150,10 @@ export class BillTypeService {
    * @param uid
    */
   async recover(bid: number, uid: number) {
-    const user = await this.findUserByUid(uid);
+    const notFoundUser = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
-    }
-
-    if (user.isAdmin === '0') {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户暂无恢复权限',
-      );
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     const billType = await this.billTypeRepository.findOne({
@@ -200,13 +186,10 @@ export class BillTypeService {
   }
 
   async list(pageNo: number, pageSize: number, uid: number) {
-    const user = await this.findUserByUid(uid);
+    const notFoundUser = await this.userService.validateUser(uid);
 
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     const skipCount = (pageNo - 1) * pageSize;

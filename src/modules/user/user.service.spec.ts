@@ -19,13 +19,13 @@ describe('UserService', () => {
   const TEST_USERNAME = 'test-user';
   const TEST_PASSWORD = 'test-pwd';
   const TEST_UUID = 'test-uuid';
-  const TEST_CODE = 'test-code';
+  const TEST_CAPTCHA_CODE = 'test-captcha-code';
   const TEST_TOKEN = 'test-token';
   const TEST_DATE = new Date('2025-04-01 12:00:00');
   const DEFAULT_AVATAR = '/images/def-avatar.png';
   const TOKEN_EXPIRY = '30m';
-  const TEXT_CODE = 'test-code';
-  const TEXT_OPENID = 'test-openid';
+  const TEST_OPENID = 'test-openid';
+  const TEST_ERROR = new Error('custom user service error');
 
   // Mock data generators
   const createMockUser = (overrides = {}) => ({
@@ -42,7 +42,7 @@ describe('UserService', () => {
     username: TEST_USERNAME,
     password: TEST_PASSWORD,
     uuid: TEST_UUID,
-    code: TEST_CODE,
+    code: TEST_CAPTCHA_CODE,
     ...overrides,
   });
 
@@ -75,8 +75,23 @@ describe('UserService', () => {
     verify: jest.fn(),
   };
 
+  // const mockConfig = {
+  //   get: jest.fn().mockReturnValue(),
+  // };
+
   const mockConfig = {
-    get: jest.fn().mockReturnValue(TOKEN_EXPIRY),
+    get: jest.fn((key) => {
+      switch (key) {
+        case 'jwt_expires_in':
+          return TOKEN_EXPIRY;
+        case 'jwt_secret':
+          return 'test-secret';
+        case 'user_init_pwd':
+          return '123456';
+        default:
+          return '';
+      }
+    }),
   };
 
   const mockAxios = {
@@ -101,7 +116,7 @@ describe('UserService', () => {
     mockConfig.get.mockReset().mockReturnValue(TOKEN_EXPIRY);
     mockAxios.getWechatUserInfo
       .mockReset()
-      .mockReturnValue(createMockUser({ openid: TEXT_OPENID }));
+      .mockReturnValue(createMockUser({ openid: TEST_OPENID }));
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -267,7 +282,10 @@ describe('UserService', () => {
         message: '验证码校验失败',
         data: undefined,
       });
-      expect(mockCaptcha.verify).toHaveBeenCalledWith(TEST_CODE, TEST_UUID);
+      expect(mockCaptcha.verify).toHaveBeenCalledWith(
+        TEST_CAPTCHA_CODE,
+        TEST_UUID,
+      );
     });
 
     it('should return error when username already exists', async () => {
@@ -375,24 +393,26 @@ describe('UserService', () => {
     it('should return error when openid not found', async () => {
       mockAxios.getWechatUserInfo.mockResolvedValue(null);
 
-      const result = await service.loginWechat(TEST_CODE);
+      const result = await service.loginWechat(TEST_CAPTCHA_CODE);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
         message: '微信登录失败',
         data: undefined,
       });
-      expect(mockAxios.getWechatUserInfo).toHaveBeenCalledWith(TEXT_CODE);
+      expect(mockAxios.getWechatUserInfo).toHaveBeenCalledWith(
+        TEST_CAPTCHA_CODE,
+      );
     });
 
     it('should return token when login is successful', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(
-        createMockUser({ openid: TEXT_OPENID }),
+        createMockUser({ openid: TEST_OPENID }),
       );
       mockJwt.sign.mockReturnValue(TEST_TOKEN);
       mockRedis.set.mockResolvedValue(true);
 
-      const result = await service.loginWechat(TEST_CODE);
+      const result = await service.loginWechat(TEST_CAPTCHA_CODE);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
@@ -405,7 +425,7 @@ describe('UserService', () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
       mockUserRepo.save.mockResolvedValue(null);
 
-      const result = await service.loginWechat(TEST_CODE);
+      const result = await service.loginWechat(TEST_CAPTCHA_CODE);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -416,12 +436,12 @@ describe('UserService', () => {
     it('should return token when openid user is not found and register user is success', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
       mockUserRepo.save.mockResolvedValue(
-        createMockUser({ openid: TEXT_OPENID }),
+        createMockUser({ openid: TEST_OPENID }),
       );
       mockJwt.sign.mockReturnValue(TEST_TOKEN);
       mockRedis.set.mockResolvedValue(true);
 
-      const result = await service.loginWechat(TEST_CODE);
+      const result = await service.loginWechat(TEST_CAPTCHA_CODE);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
@@ -478,6 +498,39 @@ describe('UserService', () => {
       const result = await service.checkIsAdmin(TEST_UID);
 
       expect(result).toBe(true);
+    });
+  });
+
+  describe('registerByWechat', () => {
+    it('should return null when register user is error', async () => {
+      mockUserRepo.save.mockImplementation(() => {
+        throw TEST_ERROR;
+      });
+
+      const result = await service.registerByWechat(TEST_CAPTCHA_CODE);
+
+      expect(result).toBeNull();
+    });
+
+    it('should register user successfully', async () => {
+      const mockUser = createMockUser({ openid: TEST_OPENID });
+
+      mockUserRepo.save.mockResolvedValue(mockUser);
+      const time = Date.now();
+
+      const result = await service.registerByWechat(TEST_OPENID);
+
+      expect(result).toEqual(mockUser);
+
+      expect(mockUserRepo.save).toHaveBeenCalledWith({
+        openid: TEST_OPENID,
+        nickName: `wechat_${time}`,
+        username: `wechat_${time}`,
+        avatarUrl: '',
+        password: md5(mockConfig.get('user_init_pwd')),
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
+      });
     });
   });
 });

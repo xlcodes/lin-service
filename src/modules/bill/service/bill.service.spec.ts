@@ -6,11 +6,15 @@ import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { BillEntity } from '@/modules/bill/entities/bill.entity';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 import { ResultCodeEnum } from '@/core/common/constant';
-import { TEST_PAGE_SIZE, TEST_PAGE_NO } from '@/test/test.constant';
+import {
+  TEST_PAGE_SIZE,
+  TEST_PAGE_NO,
+  TEST_USER_ID,
+} from '@/test/test.constant';
+import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
 describe('BillService', () => {
   let service: BillService;
-  const TEST_UID = 1;
   const TEST_BILL_ID = 1;
   const TEST_BILL_TYPE_ID = 1;
   const TEST_AMOUNT = 10000; // ¥10.00
@@ -18,7 +22,7 @@ describe('BillService', () => {
 
   // Mock data generators
   const createMockUser = (overrides = {}) => ({
-    uid: TEST_UID,
+    uid: TEST_USER_ID,
     username: 'test-user',
     ...overrides,
   });
@@ -66,11 +70,6 @@ describe('BillService', () => {
     },
     ...overrides,
   });
-
-  // Mock services
-  const mockUserService = {
-    findByUserId: jest.fn(),
-  };
 
   const mockBillTypeRepo = {
     findOne: jest.fn(),
@@ -132,7 +131,7 @@ describe('BillService', () => {
     it('should return error when user does not exist', async () => {
       mockUserService.findByUserId.mockResolvedValue(null);
 
-      const result = await service.create(createBillDto(), TEST_UID);
+      const result = await service.create(createBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -144,7 +143,7 @@ describe('BillService', () => {
     it('should return error when bill type does not exist', async () => {
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
-      const result = await service.create(createBillDto(), TEST_UID);
+      const result = await service.create(createBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -159,7 +158,7 @@ describe('BillService', () => {
     it('should return error when creation fails', async () => {
       mockBillRepo.save.mockRejectedValue(new Error('Creation failed'));
 
-      const result = await service.create(createBillDto(), TEST_UID);
+      const result = await service.create(createBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.error,
@@ -169,7 +168,7 @@ describe('BillService', () => {
     });
 
     it('should create bill successfully when data is valid', async () => {
-      const result = await service.create(createBillDto(), TEST_UID);
+      const result = await service.create(createBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
@@ -188,7 +187,7 @@ describe('BillService', () => {
           payType: PayTypeEnum.PAID,
         },
         user: {
-          uid: TEST_UID,
+          uid: TEST_USER_ID,
           username: 'test-user',
         },
       });
@@ -204,21 +203,15 @@ describe('BillService', () => {
     });
 
     it('should return error when user does not exist', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
+      await validateUser(async () => {
+        return await service.update(createUpdateBillDto(), TEST_USER_ID);
       });
     });
 
     it('should return error when bill type does not exist', async () => {
       mockBillTypeRepo.findOne.mockResolvedValue(null);
 
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -230,7 +223,7 @@ describe('BillService', () => {
     it('should return error when bill does not exist', async () => {
       mockBillRepo.findOne.mockResolvedValue(null);
 
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -244,7 +237,7 @@ describe('BillService', () => {
         createMockBill({ deletedAt: TEST_DATE }),
       );
 
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -258,7 +251,7 @@ describe('BillService', () => {
         createMockBill({ user: { uid: 999 } }),
       );
 
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -270,7 +263,7 @@ describe('BillService', () => {
     it('should return error when update fails', async () => {
       mockBillRepo.save.mockRejectedValue(new Error('Update failed'));
 
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.error,
@@ -280,7 +273,7 @@ describe('BillService', () => {
     });
 
     it('should update bill successfully when data is valid', async () => {
-      const result = await service.update(createUpdateBillDto(), TEST_UID);
+      const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
@@ -300,7 +293,7 @@ describe('BillService', () => {
           payType: PayTypeEnum.PAID,
         },
         user: {
-          uid: TEST_UID,
+          uid: TEST_USER_ID,
           username: 'test-user',
         },
       });
@@ -315,21 +308,15 @@ describe('BillService', () => {
     });
 
     it('should return error when user does not exist', async () => {
-      mockUserService.findByUserId.mockResolvedValue(null);
-
-      const result = await service.delete(TEST_BILL_ID, TEST_UID);
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
+      await validateUser(async () => {
+        return await service.delete(TEST_BILL_ID, TEST_USER_ID);
       });
     });
 
     it('should return error when bill does not exist', async () => {
       mockBillRepo.findOne.mockResolvedValue(null);
 
-      const result = await service.delete(TEST_BILL_ID, TEST_UID);
+      const result = await service.delete(TEST_BILL_ID, TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.exception_error,
@@ -341,7 +328,7 @@ describe('BillService', () => {
     it('should return error when deletion fails', async () => {
       mockBillRepo.save.mockRejectedValue(new Error('Deletion failed'));
 
-      const result = await service.delete(TEST_BILL_ID, TEST_UID);
+      const result = await service.delete(TEST_BILL_ID, TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.error,
@@ -351,7 +338,7 @@ describe('BillService', () => {
     });
 
     it('should delete bill successfully when user has permission', async () => {
-      const result = await service.delete(TEST_BILL_ID, TEST_UID);
+      const result = await service.delete(TEST_BILL_ID, TEST_USER_ID);
 
       expect(result).toEqual({
         code: ResultCodeEnum.success,
@@ -382,7 +369,7 @@ describe('BillService', () => {
       const result = await service.list(
         createListQuery().pageInfo,
         createListQuery().queryData,
-        TEST_UID,
+        TEST_USER_ID,
       );
 
       expect(result).toEqual({
@@ -396,7 +383,7 @@ describe('BillService', () => {
       const result = await service.list(
         createListQuery().pageInfo,
         createListQuery().queryData,
-        TEST_UID,
+        TEST_USER_ID,
       );
 
       expect(result).toEqual({
@@ -419,7 +406,7 @@ describe('BillService', () => {
       const result = await service.list(
         createListQuery().pageInfo,
         createListQuery().queryData,
-        TEST_UID,
+        TEST_USER_ID,
       );
 
       expect(result).toEqual({

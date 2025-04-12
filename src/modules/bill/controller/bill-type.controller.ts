@@ -10,7 +10,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RequireLogin, UserInfo } from '@/core/decorator/custom.decorator';
+import {
+  IsAdmin,
+  RequireLogin,
+  UserInfo,
+} from '@/core/decorator/custom.decorator';
 import {
   CreateBillTypeDto,
   UpdateBillTypeDto,
@@ -67,7 +71,7 @@ export class BillTypeController {
 
   @ApiOperation({ summary: '恢复账单分类' })
   @Post('recover/:id')
-  @RequireLogin()
+  @IsAdmin()
   async recover(
     @Param('id', generateParseIntPipe('id')) bid: number,
     @UserInfo('uid') uid: number,

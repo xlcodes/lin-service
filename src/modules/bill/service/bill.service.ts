@@ -22,13 +22,9 @@ export class BillService {
   @InjectRepository(BillEntity)
   private readonly billRepo: Repository<BillEntity>;
 
-  private async findUserByUid(uid: number) {
-    return await this.userService.findByUserId(uid);
-  }
-
   async create(dto: CreateBillDto, uid: number) {
     // 查询用户信息
-    const user = await this.findUserByUid(uid);
+    const user = await this.userService.findByUserId(uid);
 
     if (!user) {
       return ResultData.exceptionFail(
@@ -69,12 +65,10 @@ export class BillService {
   }
 
   async update(dto: UpdateBillDto, uid: number) {
-    const user = await this.findUserByUid(uid);
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    const notFoundUser = await this.userService.validateUser(uid);
+
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     // 查询账单分类是否存在
@@ -131,12 +125,10 @@ export class BillService {
   }
 
   async delete(billId: number, uid: number) {
-    const user = await this.findUserByUid(uid);
-    if (!user) {
-      return ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      );
+    const notFoundUser = await this.userService.validateUser(uid);
+
+    if (notFoundUser) {
+      return notFoundUser;
     }
 
     const foundBill = await this.billRepo.findOne({
@@ -175,7 +167,7 @@ export class BillService {
     uid: number,
   ) {
     // 用户是否存在检验
-    const user = await this.findUserByUid(uid);
+    const user = await this.userService.findByUserId(uid);
 
     if (!user) {
       return ResultData.exceptionFail(

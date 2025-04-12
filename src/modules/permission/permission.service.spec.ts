@@ -6,8 +6,13 @@ import { PermissionEntity } from '@/modules/permission/entities/permission.entit
 import { UserService } from '@/modules/user/user.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { IsNull } from 'typeorm';
-import { ResultData } from '@/core/utils/result';
-import { TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_TOTAL } from '@/test/test.constant';
+import {
+  TEST_PAGE_NO,
+  TEST_PAGE_SIZE,
+  TEST_TOTAL,
+  TEST_USER_ID,
+} from '@/test/test.constant';
+import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -16,7 +21,6 @@ describe('PermissionService', () => {
   const TEST_NAME = 'system:test:create';
   const TEST_DESCRIPTION = 'test-description';
   const TEST_DATE = new Date('2025-04-01 12:00:00');
-  const TEST_USER_ID = 5;
   const TEST_ERROR = new Error('test-error');
 
   const createMockPermission = (options = {}) => {
@@ -43,11 +47,6 @@ describe('PermissionService', () => {
         total: TEST_TOTAL,
       },
     };
-  };
-
-  // Mock services
-  const mockUserService = {
-    validateUser: jest.fn(),
   };
 
   const mockPermissionRepo = {
@@ -102,30 +101,11 @@ describe('PermissionService', () => {
     expect(service).toBeDefined();
   });
 
-  const validateUser = async <T>(callback: () => Promise<T>) => {
-    it('should return not user when user not found', async () => {
-      mockUserService.validateUser.mockResolvedValue(
-        ResultData.exceptionFail(
-          ResultCodeEnum.exception_error,
-          '当前用户不存在',
-        ),
-      );
-
-      const result = await callback();
-
-      expect(result).toEqual({
-        code: ResultCodeEnum.exception_error,
-        message: '当前用户不存在',
-        data: undefined,
-      });
-
-      expect(mockUserService.validateUser).toHaveBeenCalledWith(TEST_USER_ID);
-    });
-  };
-
   describe('create 创建权限', () => {
-    validateUser(async () => {
-      return await service.create(createMockPermission(), TEST_USER_ID);
+    it('should return not user when user not found', async () => {
+      await validateUser(async () => {
+        return await service.create(createMockPermission(), TEST_USER_ID);
+      });
     });
 
     it('should return error when permission already exists', async () => {
@@ -183,12 +163,14 @@ describe('PermissionService', () => {
   });
 
   describe('update 更新权限', () => {
-    validateUser(async () => {
-      return await service.update(
-        TEST_ID,
-        createMockPermission(),
-        TEST_USER_ID,
-      );
+    it('should return not user when user not found', async () => {
+      await validateUser(async () => {
+        return await service.update(
+          TEST_ID,
+          createMockPermission(),
+          TEST_USER_ID,
+        );
+      });
     });
 
     it('should return error when permission not found', async () => {
@@ -262,8 +244,10 @@ describe('PermissionService', () => {
   });
 
   describe('delete 删除权限', () => {
-    validateUser(async () => {
-      return await service.remove(TEST_ID, TEST_USER_ID);
+    it('should return not user when user not found', async () => {
+      await validateUser(async () => {
+        return await service.remove(TEST_ID, TEST_USER_ID);
+      });
     });
 
     it('should return error when permission is not found', async () => {
@@ -318,8 +302,10 @@ describe('PermissionService', () => {
   });
 
   describe('findOne 查询权限详情', () => {
-    validateUser(async () => {
-      return await service.findOne(TEST_ID, TEST_USER_ID);
+    it('should return not user when user not found', async () => {
+      await validateUser(async () => {
+        return await service.findOne(TEST_ID, TEST_USER_ID);
+      });
     });
 
     it('should return error when find permission is error', async () => {
@@ -375,8 +361,14 @@ describe('PermissionService', () => {
   });
 
   describe('findAll 查询权限', () => {
-    validateUser(async () => {
-      return await service.findAll(TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_USER_ID);
+    it('should return not user when user not found', async () => {
+      await validateUser(async () => {
+        return await service.findAll(
+          TEST_PAGE_NO,
+          TEST_PAGE_SIZE,
+          TEST_USER_ID,
+        );
+      });
     });
 
     it('should return error when find permission is error', async () => {

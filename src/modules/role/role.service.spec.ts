@@ -5,16 +5,20 @@ import { Logger } from '@nestjs/common';
 import { RoleEntity } from '@/modules/role/entities/role.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PermissionEntity } from '@/modules/permission/entities/permission.entity';
-import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { In, IsNull } from 'typeorm';
-import { TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_TOTAL } from '@/test/test.constant';
+import {
+  TEST_PAGE_NO,
+  TEST_PAGE_SIZE,
+  TEST_TOTAL,
+  TEST_USER_ID,
+} from '@/test/test.constant';
+import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
 describe('RoleService', () => {
   let service: RoleService;
 
   const TEST_DATE = new Date('2025-01-01T00:00:00.000Z');
-  const TEST_USER_ID = 5;
 
   const TEST_ROLE_ID = 1;
   const TEST_ROLE_NAME = 'test-role';
@@ -62,10 +66,6 @@ describe('RoleService', () => {
       total: TEST_TOTAL,
     },
   });
-
-  const mockUserService = {
-    validateUser: jest.fn(),
-  };
 
   const mockLogger = {
     error: jest.fn(),
@@ -126,25 +126,6 @@ describe('RoleService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
-
-  const validateUser = async <T>(callback: () => Promise<T>) => {
-    mockUserService.validateUser.mockResolvedValue(
-      ResultData.exceptionFail(
-        ResultCodeEnum.exception_error,
-        '当前用户不存在',
-      ),
-    );
-
-    const result = await callback();
-
-    expect(result).toEqual({
-      code: ResultCodeEnum.exception_error,
-      message: '当前用户不存在',
-      data: undefined,
-    });
-
-    expect(mockUserService.validateUser).toHaveBeenCalledWith(TEST_USER_ID);
-  };
 
   describe('create 创建角色', () => {
     beforeEach(() => {
