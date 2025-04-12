@@ -1,12 +1,14 @@
 import { DataSource } from 'typeorm';
+import dataSourceConfig from '@/data-source.config';
+// import dataSourceConfig from '@/data-source.example.config';
 
 export default new DataSource({
   type: 'mysql',
-  host: 'localhost',
-  port: 3306,
-  username: 'root',
-  password: '123456',
-  database: 'test_dev',
+  host: dataSourceConfig.host,
+  port: Number(dataSourceConfig.port),
+  username: dataSourceConfig.username,
+  password: dataSourceConfig.password,
+  database: dataSourceConfig.database,
   synchronize: false,
   logging: true,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
