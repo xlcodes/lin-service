@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRoleDto {
   @IsNotEmpty({ message: '角色名称不能为空' })
@@ -10,6 +10,6 @@ export class CreateRoleDto {
   description: string;
 
   @IsOptional()
-  @IsString({ message: '角色权限应该是字符串' })
+  @IsArray({ message: '角色权限应该是字符串数组' })
   permissions?: string[];
 }

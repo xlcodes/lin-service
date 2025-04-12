@@ -64,7 +64,7 @@ export class RoleService {
     role.updatedAt = new Date();
 
     // 处理权限
-    if (dto.permissions.length > 0) {
+    if (Array.isArray(dto?.permissions) && dto.permissions.length > 0) {
       role.permissions = await this.findAllPermissions(dto.permissions);
     }
 
@@ -180,7 +180,7 @@ export class RoleService {
     found.updatedAt = new Date();
 
     // 判断是否需要更新权限
-    if (dto.permissions.length > 0) {
+    if (Array.isArray(dto?.permissions) && dto.permissions.length > 0) {
       found.permissions = await this.findAllPermissions(dto.permissions);
     }
 

@@ -43,6 +43,7 @@ describe('RoleService', () => {
       id: TEST_ROLE_ID,
       createdAt: TEST_DATE,
       updatedAt: TEST_DATE,
+      permissions: TEST_PERMISSIONS,
       deletedAt: null,
       ...options,
     });
@@ -207,6 +208,29 @@ describe('RoleService', () => {
       });
     });
 
+    it('should not error when permission is not exists', async () => {
+      const mockDto = createMockDto({
+        permissions: undefined,
+      });
+
+      const result = await service.create(mockDto, TEST_USER_ID);
+
+      expect(result).toEqual({
+        code: ResultCodeEnum.success,
+        message: '创建角色成功',
+        data: null,
+      });
+
+      expect(mockPermissionRepo.find).not.toHaveBeenCalled();
+
+      expect(mockRoleRepo.save).toHaveBeenCalledWith({
+        name: mockDto.name,
+        description: mockDto.description,
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
+      });
+    });
+
     it('should create a new role and permission when permission found', async () => {
       mockPermissionRepo.find.mockResolvedValue(TEST_PERMISSIONS);
 
@@ -310,6 +334,26 @@ describe('RoleService', () => {
       });
     });
 
+    it('should update a role when permission is not string arr', async () => {
+      const mockDto = createMockDto({
+        permissions: undefined,
+      });
+
+      await service.update(TEST_ROLE_ID, mockDto, TEST_USER_ID);
+
+      expect(mockPermissionRepo.find).not.toHaveBeenCalled();
+
+      expect(mockRoleRepo.save).toHaveBeenCalledWith({
+        id: TEST_ROLE_ID,
+        name: mockDto.name,
+        description: mockDto.description,
+        createdAt: TEST_DATE,
+        updatedAt: TEST_DATE,
+        permissions: TEST_PERMISSIONS,
+        deletedAt: null,
+      });
+    });
+
     it('should update a role and permission when permission found', async () => {
       mockPermissionRepo.find.mockResolvedValue(TEST_PERMISSIONS);
 
@@ -397,7 +441,7 @@ describe('RoleService', () => {
         description: TEST_ROLE_DESCRIPTION,
         createdAt: TEST_DATE,
         updatedAt: TEST_DATE,
-        permissions: TEST_PERMISSIONS.map((item) => item.name),
+        permissions: TEST_PERMISSIONS,
         deletedAt: TEST_DATE,
       });
     });
