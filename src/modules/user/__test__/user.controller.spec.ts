@@ -4,20 +4,18 @@ import { UserService } from '@/modules/user/user.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { BadRequestException } from '@nestjs/common';
+import { TEST_USER_NAME, TEST_UUID, TEST_CODE } from '@/test/test.constant';
 
 describe('UserController', () => {
   let controller: UserController;
 
-  const TEST_CODE = 'test-code';
   const TEST_TOKEN = 'test-token';
-  const TEST_USER_NAME = 'test-user';
   const TEST_USER_PWD = 'test-pwd';
-  const TEST_USER_UUID = 'test-uuid';
 
   const createMockUser = (options = {}) => ({
     username: TEST_USER_NAME,
     password: TEST_USER_PWD,
-    uuid: TEST_USER_UUID,
+    uuid: TEST_UUID,
     code: TEST_CODE,
     ...options,
   });

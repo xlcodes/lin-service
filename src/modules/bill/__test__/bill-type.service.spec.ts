@@ -6,9 +6,11 @@ import { UserService } from '@/modules/user/user.service';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 import { ResultCodeEnum } from '@/core/common/constant';
 import {
+  TEST_ERROR,
   TEST_PAGE_NO,
   TEST_PAGE_SIZE,
   TEST_USER_ID,
+  TEST_USER_NAME,
 } from '@/test/test.constant';
 import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
@@ -25,7 +27,7 @@ describe('BillTypeService', () => {
 
   const createMockUser = (overrides = {}) => ({
     uid: TEST_USER_ID,
-    username: 'test-user',
+    username: TEST_USER_NAME,
     ...overrides,
   });
 
@@ -106,9 +108,7 @@ describe('BillTypeService', () => {
 
     it('should return error when pagination query fails', async () => {
       mockUserService.findByUserId.mockResolvedValue(createMockUser());
-      mockBillTypeRepo.findAndCount.mockRejectedValue(
-        new Error('Database error'),
-      );
+      mockBillTypeRepo.findAndCount.mockRejectedValue(TEST_ERROR);
 
       const result = await service.list(
         TEST_PAGE_NO,
@@ -170,7 +170,7 @@ describe('BillTypeService', () => {
         payType: billTypeData.payType,
         createdAt: new Date(),
         updatedAt: new Date(),
-        user: { uid: TEST_USER_ID, username: 'test-user' },
+        user: { uid: TEST_USER_ID, username: TEST_USER_NAME },
       });
     });
 
@@ -178,7 +178,7 @@ describe('BillTypeService', () => {
       const billTypeData = createMockBillType();
       mockUserService.findByUserId.mockResolvedValue(createMockUser());
       mockBillTypeRepo.findOne.mockResolvedValue(null);
-      mockBillTypeRepo.save.mockRejectedValue(new Error('Creation failed'));
+      mockBillTypeRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.create(billTypeData, TEST_USER_ID);
 
@@ -277,7 +277,7 @@ describe('BillTypeService', () => {
         ...billTypeData,
         user: { uid: TEST_USER_ID },
       });
-      mockBillTypeRepo.save.mockRejectedValue(new Error('Update failed'));
+      mockBillTypeRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.update(billTypeData, TEST_USER_ID);
 
@@ -375,7 +375,7 @@ describe('BillTypeService', () => {
         ...createMockBillType(),
         user: { uid: TEST_USER_ID },
       });
-      mockBillTypeRepo.save.mockRejectedValue(new Error('Deletion failed'));
+      mockBillTypeRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.delete(TEST_BILL_TYPE_ID, TEST_USER_ID);
 
@@ -460,7 +460,7 @@ describe('BillTypeService', () => {
         ...createMockBillType(),
         deletedAt: new Date(),
       });
-      mockBillTypeRepo.save.mockRejectedValue(new Error('Recovery failed'));
+      mockBillTypeRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.recover(TEST_BILL_TYPE_ID, TEST_USER_ID);
 

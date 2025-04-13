@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RedisService } from '@/core/redis/redis.service';
 import { RedisClientType } from 'redis';
 import { REDIS_CLIENT } from '@/core/common/constant';
+import { TEST_ERROR } from '@/test/test.constant';
 
 describe('RedisService', () => {
   let service: RedisService;
@@ -14,7 +15,6 @@ describe('RedisService', () => {
   const TEST_FIELD = 'test-field';
   const FAILING_KEY = 'failing-key';
   const TTL_SECONDS = 60;
-  const REDIS_ERROR = new Error('Redis operation failed');
 
   beforeEach(async () => {
     // Initialize mocks
@@ -73,13 +73,13 @@ describe('RedisService', () => {
       });
 
       it('should log error and return null when Redis operation fails', async () => {
-        mockRedisClient.get.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.get.mockRejectedValue(TEST_ERROR);
 
         const result = await service.get(FAILING_KEY);
 
         expect(result).toBeNull();
         expect(mockRedisClient.get).toHaveBeenCalledWith(FAILING_KEY);
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
 
@@ -109,12 +109,12 @@ describe('RedisService', () => {
       });
 
       it('should log error and return false when set fails', async () => {
-        mockRedisClient.set.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.set.mockRejectedValue(TEST_ERROR);
 
         const result = await service.set(FAILING_KEY, TEST_VALUE);
 
         expect(result).toBe(false);
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
 
@@ -129,12 +129,12 @@ describe('RedisService', () => {
       });
 
       it('should log error and return false when deletion fails', async () => {
-        mockRedisClient.del.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.del.mockRejectedValue(TEST_ERROR);
 
         const result = await service.del(FAILING_KEY);
 
         expect(result).toBe(false);
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
   });
@@ -161,12 +161,12 @@ describe('RedisService', () => {
       });
 
       it('should log error and return null when Redis operation fails', async () => {
-        mockRedisClient.hGet.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.hGet.mockRejectedValue(TEST_ERROR);
 
         const result = await service.hashGet(FAILING_KEY, TEST_FIELD);
 
         expect(result).toBeNull();
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
 
@@ -186,7 +186,7 @@ describe('RedisService', () => {
       });
 
       it('should log error and return false when set fails', async () => {
-        mockRedisClient.hSet.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.hSet.mockRejectedValue(TEST_ERROR);
 
         const result = await service.hashSet(
           FAILING_KEY,
@@ -195,7 +195,7 @@ describe('RedisService', () => {
         );
 
         expect(result).toBe(false);
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
 
@@ -209,12 +209,12 @@ describe('RedisService', () => {
       });
 
       it('should log error and return false when deletion fails', async () => {
-        mockRedisClient.hDel.mockRejectedValue(REDIS_ERROR);
+        mockRedisClient.hDel.mockRejectedValue(TEST_ERROR);
 
         const result = await service.hashDel(FAILING_KEY, TEST_FIELD);
 
         expect(result).toBeFalsy();
-        expect(loggerSpy).toHaveBeenCalledWith(REDIS_ERROR);
+        expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
       });
     });
   });

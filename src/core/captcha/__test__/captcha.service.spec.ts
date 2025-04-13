@@ -2,15 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { RedisService } from '@/core/redis/redis.service';
 import { CacheEnum } from '@/core/common/constant';
+import { TEST_CODE, TEST_UUID, TEST_ERROR } from '@/test/test.constant';
 
 describe('CaptchaService', () => {
   let service: CaptchaService;
 
   const testData = {
-    uuid: 'test-uuid',
-    code: 'test-code',
+    uuid: TEST_UUID,
+    code: TEST_CODE,
     errorCode: 'error-code',
-    redisError: new Error('Redis operation failed'),
     captchaExpiry: 5 * 60, // s
     emptyString: '',
   };
@@ -65,7 +65,7 @@ describe('CaptchaService', () => {
 
   describe('generateCode', () => {
     it('should return 500 error when failed to save captcha to redis', async () => {
-      mockRedis.set.mockRejectedValue(testData.redisError);
+      mockRedis.set.mockRejectedValue(TEST_ERROR);
 
       const result = await service.generateCode();
 
@@ -137,7 +137,7 @@ describe('CaptchaService', () => {
     });
 
     it('should return false when redis get operation fails', async () => {
-      mockRedis.get.mockRejectedValue(testData.redisError);
+      mockRedis.get.mockRejectedValue(TEST_ERROR);
 
       const result = await service.verify(testData.code, testData.uuid);
 
@@ -148,7 +148,7 @@ describe('CaptchaService', () => {
 
     it('should return false when delete operation fails after successful verification', async () => {
       mockRedis.get.mockResolvedValue(testData.code);
-      mockRedis.del.mockRejectedValue(testData.redisError);
+      mockRedis.del.mockRejectedValue(TEST_ERROR);
 
       const result = await service.verify(testData.code, testData.uuid);
 

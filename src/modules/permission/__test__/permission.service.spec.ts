@@ -7,10 +7,13 @@ import { UserService } from '@/modules/user/user.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { IsNull } from 'typeorm';
 import {
+  mockLogger,
   TEST_PAGE_NO,
   TEST_PAGE_SIZE,
   TEST_TOTAL,
   TEST_USER_ID,
+  TEST_ERROR,
+  TEST_DATE,
 } from '@/test/test.constant';
 import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
@@ -20,8 +23,6 @@ describe('PermissionService', () => {
   const TEST_ID = 1;
   const TEST_NAME = 'system:test:create';
   const TEST_DESCRIPTION = 'test-description';
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
-  const TEST_ERROR = new Error('test-error');
 
   const createMockPermission = (options = {}) => {
     return {
@@ -53,10 +54,6 @@ describe('PermissionService', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     findAndCount: jest.fn(),
-  };
-
-  const mockLogger = {
-    error: jest.fn(),
   };
 
   beforeEach(async () => {

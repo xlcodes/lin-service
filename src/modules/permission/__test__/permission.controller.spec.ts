@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PermissionController } from '@/modules/permission/permission.controller';
 import { PermissionService } from '@/modules/permission/permission.service';
 import { ResultCodeEnum } from '@/core/common/constant';
-import { TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_TOTAL } from '@/test/test.constant';
+import {
+  TEST_PAGE_NO,
+  TEST_PAGE_SIZE,
+  TEST_TOTAL,
+  TEST_DATE,
+} from '@/test/test.constant';
 
 describe('PermissionController', () => {
   let controller: PermissionController;
@@ -11,7 +16,6 @@ describe('PermissionController', () => {
   const TEST_NAME = 'system:test:create';
   const TEST_DESCRIPTION = 'test-description';
   const TEST_USER_ID = 5;
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
 
   const createMockPermission = (options = {}) => {
     return {

@@ -3,7 +3,12 @@ import { RoleController } from '@/modules/role/role.controller';
 import { RoleService } from '@/modules/role/role.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { CreateRoleDto } from '@/modules/role/dto/create-role.dto';
-import { TEST_TOTAL, TEST_PAGE_SIZE, TEST_PAGE_NO } from '@/test/test.constant';
+import {
+  TEST_TOTAL,
+  TEST_PAGE_SIZE,
+  TEST_PAGE_NO,
+  TEST_DATE,
+} from '@/test/test.constant';
 
 describe('RoleController', () => {
   let controller: RoleController;
@@ -11,7 +16,6 @@ describe('RoleController', () => {
   const TEST_ROLE_ID = 1;
   const TEST_ROLE_NAME = 'test-role';
   const TEST_ROLE_DESC = 'test-role-desc';
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
   const TEST_USER_ID = 5;
 
   const createMockRole = (options = {}) => {

@@ -10,45 +10,45 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AxiosService } from '@/core/axios/axios.service';
 import { IsNull } from 'typeorm';
+import {
+  TEST_USER_NAME,
+  TEST_UUID,
+  TEST_OPENID,
+  TEST_PWD,
+  TEST_ERROR,
+  TEST_DATE,
+} from '@/test/test.constant';
 
 describe('UserService', () => {
   let service: UserService;
 
-  // Constants
   const TEST_UID = 1;
-  const TEST_USERNAME = 'test-user';
-  const TEST_PASSWORD = 'test-pwd';
-  const TEST_UUID = 'test-uuid';
   const TEST_CAPTCHA_CODE = 'test-captcha-code';
   const TEST_TOKEN = 'test-token';
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
   const DEFAULT_AVATAR = '/images/def-avatar.png';
   const TOKEN_EXPIRY = '30m';
-  const TEST_OPENID = 'test-openid';
-  const TEST_ERROR = new Error('custom user service error');
 
-  // Mock data generators
   const createMockUser = (overrides = {}) => ({
     uid: TEST_UID,
-    username: TEST_USERNAME,
-    password: md5(TEST_PASSWORD),
-    nickName: TEST_USERNAME,
+    username: TEST_USER_NAME,
+    password: md5(TEST_PWD),
+    nickName: TEST_USER_NAME,
     avatarUrl: DEFAULT_AVATAR,
     isAdmin: false,
     ...overrides,
   });
 
   const createRegisterDto = (overrides = {}) => ({
-    username: TEST_USERNAME,
-    password: TEST_PASSWORD,
+    username: TEST_USER_NAME,
+    password: TEST_PWD,
     uuid: TEST_UUID,
     code: TEST_CAPTCHA_CODE,
     ...overrides,
   });
 
   const createLoginDto = (overrides = {}) => ({
-    username: TEST_USERNAME,
-    password: TEST_PASSWORD,
+    username: TEST_USER_NAME,
+    password: TEST_PWD,
     ...overrides,
   });
 
@@ -74,10 +74,6 @@ describe('UserService', () => {
     sign: jest.fn(),
     verify: jest.fn(),
   };
-
-  // const mockConfig = {
-  //   get: jest.fn().mockReturnValue(),
-  // };
 
   const mockConfig = {
     get: jest.fn((key) => {
@@ -214,7 +210,7 @@ describe('UserService', () => {
   describe('verifyToken', () => {
     it('should return null when token verification throws error', async () => {
       mockJwt.verify.mockImplementation(() => {
-        throw new Error('Token verification failed');
+        throw TEST_ERROR;
       });
 
       const result = await service.verifyToken(TEST_TOKEN);
@@ -299,13 +295,13 @@ describe('UserService', () => {
         data: undefined,
       });
       expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
-        username: TEST_USERNAME,
+        username: TEST_USER_NAME,
       });
     });
 
     it('should return error when user creation fails', async () => {
       mockUserRepo.findOneBy.mockResolvedValue(null);
-      mockUserRepo.save.mockRejectedValue(new Error('Database error'));
+      mockUserRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.register(createRegisterDto());
 
@@ -328,9 +324,9 @@ describe('UserService', () => {
         data: null,
       });
       expect(mockUserRepo.save).toHaveBeenCalledWith({
-        username: TEST_USERNAME,
-        nickName: TEST_USERNAME,
-        password: md5(TEST_PASSWORD),
+        username: TEST_USER_NAME,
+        nickName: TEST_USER_NAME,
+        password: md5(TEST_PWD),
         createdAt: TEST_DATE,
         updatedAt: TEST_DATE,
         avatarUrl: DEFAULT_AVATAR,
@@ -350,7 +346,7 @@ describe('UserService', () => {
         data: undefined,
       });
       expect(mockUserRepo.findOneBy).toHaveBeenCalledWith({
-        username: TEST_USERNAME,
+        username: TEST_USER_NAME,
         deletedAt: IsNull(),
       });
     });
@@ -471,7 +467,7 @@ describe('UserService', () => {
       const result = await service.findByUserId(TEST_UID);
 
       expect(result).toEqual(mockUser);
-      expect(result.password).toBe(md5(TEST_PASSWORD));
+      expect(result.password).toBe(md5(TEST_PWD));
     });
   });
 

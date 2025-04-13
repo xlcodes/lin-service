@@ -1,25 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AxiosService } from '../axios.service';
+import { AxiosService } from '@/core/axios/axios.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { of } from 'rxjs';
 import { WECHAT_BASE_URL } from '@/core/common/constant';
 import { Logger } from '@nestjs/common';
+import { mockLogger, TEST_ERROR } from '@/test/test.constant';
+import { TEST_CODE, TEST_OPENID, TEST_DATE } from '@/test/test.constant';
 
 describe('AxiosService', () => {
   let service: AxiosService;
 
   const TEST_APPID = 'test-appid';
   const TEST_APP_SECRET = 'test-app-secret';
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
-  const TEST_CODE = 'test-code';
-  const TEST_OPENID = 'test-openid';
   const TEST_ERR_CODE = 40226;
   const TEST_ERR_MSG = 'test-error-msg';
-
-  const mockLogger = {
-    error: jest.fn(),
-  };
 
   const mockHttpService = {
     get: jest.fn(),
@@ -78,9 +73,8 @@ describe('AxiosService', () => {
 
   describe('getWechatUserInfo', () => {
     it('should return null when request fails', async () => {
-      const mockError = new Error('Request failed');
       mockHttpService.get.mockImplementation(() => {
-        throw mockError;
+        throw TEST_ERROR;
       });
 
       const loggerSpy = jest.spyOn(service['logger'], 'error');
@@ -88,7 +82,7 @@ describe('AxiosService', () => {
       const result = await service.getWechatUserInfo(TEST_CODE);
 
       expect(result).toBeNull();
-      expect(loggerSpy).toHaveBeenCalledWith(mockError);
+      expect(loggerSpy).toHaveBeenCalledWith(TEST_ERROR);
     });
 
     it('should return null when response contains error code', async () => {

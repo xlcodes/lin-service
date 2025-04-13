@@ -3,13 +3,12 @@ import { CaptchaController } from '@/core/captcha/captcha.controller';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';
+import { TEST_ERROR, TEST_UUID } from '@/test/test.constant';
 
 describe('CaptchaController', () => {
   let controller: CaptchaController;
   let captchaService: jest.Mocked<CaptchaService>;
 
-  // Constants
-  const TEST_UUID = 'test-uuid';
   const TEST_IMG = 'test-img';
   const SUCCESS_MESSAGE = '验证码生成成功';
   const ERROR_MESSAGE = '生成验证码错误，请重试';
@@ -82,7 +81,7 @@ describe('CaptchaController', () => {
     });
 
     it('should propagate service errors', async () => {
-      const error = new Error('Service error');
+      const error = TEST_ERROR;
       captchaService.generateCode.mockRejectedValueOnce(error);
 
       await expect(controller.captcha()).rejects.toThrow(error);

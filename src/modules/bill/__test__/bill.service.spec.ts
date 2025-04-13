@@ -10,6 +10,9 @@ import {
   TEST_PAGE_SIZE,
   TEST_PAGE_NO,
   TEST_USER_ID,
+  TEST_USER_NAME,
+  TEST_ERROR,
+  TEST_DATE,
 } from '@/test/test.constant';
 import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
@@ -18,12 +21,11 @@ describe('BillService', () => {
   const TEST_BILL_ID = 1;
   const TEST_BILL_TYPE_ID = 1;
   const TEST_AMOUNT = 10000; // ¥10.00
-  const TEST_DATE = new Date('2025-04-01 12:00:00');
 
   // Mock data generators
   const createMockUser = (overrides = {}) => ({
     uid: TEST_USER_ID,
-    username: 'test-user',
+    username: TEST_USER_NAME,
     ...overrides,
   });
 
@@ -156,7 +158,7 @@ describe('BillService', () => {
     });
 
     it('should return error when creation fails', async () => {
-      mockBillRepo.save.mockRejectedValue(new Error('Creation failed'));
+      mockBillRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.create(createBillDto(), TEST_USER_ID);
 
@@ -188,7 +190,7 @@ describe('BillService', () => {
         },
         user: {
           uid: TEST_USER_ID,
-          username: 'test-user',
+          username: TEST_USER_NAME,
         },
       });
     });
@@ -261,7 +263,7 @@ describe('BillService', () => {
     });
 
     it('should return error when update fails', async () => {
-      mockBillRepo.save.mockRejectedValue(new Error('Update failed'));
+      mockBillRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.update(createUpdateBillDto(), TEST_USER_ID);
 
@@ -294,7 +296,7 @@ describe('BillService', () => {
         },
         user: {
           uid: TEST_USER_ID,
-          username: 'test-user',
+          username: TEST_USER_NAME,
         },
       });
     });
@@ -326,7 +328,7 @@ describe('BillService', () => {
     });
 
     it('should return error when deletion fails', async () => {
-      mockBillRepo.save.mockRejectedValue(new Error('Deletion failed'));
+      mockBillRepo.save.mockRejectedValue(TEST_ERROR);
 
       const result = await service.delete(TEST_BILL_ID, TEST_USER_ID);
 
@@ -401,7 +403,7 @@ describe('BillService', () => {
     });
 
     it('should return error when query fails', async () => {
-      mockBillRepo.findAndCount.mockRejectedValue(new Error('Query failed'));
+      mockBillRepo.findAndCount.mockRejectedValue(TEST_ERROR);
 
       const result = await service.list(
         createListQuery().pageInfo,

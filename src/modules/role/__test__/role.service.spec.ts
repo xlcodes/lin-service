@@ -8,17 +8,18 @@ import { PermissionEntity } from '@/modules/permission/entities/permission.entit
 import { ResultCodeEnum } from '@/core/common/constant';
 import { In, IsNull } from 'typeorm';
 import {
+  mockLogger,
   TEST_PAGE_NO,
   TEST_PAGE_SIZE,
   TEST_TOTAL,
   TEST_USER_ID,
+  TEST_ERROR,
+  TEST_DATE,
 } from '@/test/test.constant';
 import { mockUserService, validateUser } from '@/test/help/validate-user.test';
 
 describe('RoleService', () => {
   let service: RoleService;
-
-  const TEST_DATE = new Date('2025-01-01T00:00:00.000Z');
 
   const TEST_ROLE_ID = 1;
   const TEST_ROLE_NAME = 'test-role';
@@ -30,8 +31,6 @@ describe('RoleService', () => {
       description: 'test-description',
     },
   ];
-
-  const TEST_ERROR = new Error('role-service-test-error');
 
   const createMockDto = (options = {}) => {
     return {
@@ -66,10 +65,6 @@ describe('RoleService', () => {
       total: TEST_TOTAL,
     },
   });
-
-  const mockLogger = {
-    error: jest.fn(),
-  };
 
   const mockRoleRepo = {
     findOne: jest.fn(),

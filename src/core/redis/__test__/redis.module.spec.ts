@@ -4,6 +4,7 @@ import { RedisService } from '@/core/redis/redis.service';
 import { REDIS_CLIENT } from '@/core/common/constant';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from 'redis';
+import { TEST_ERROR, TEST_ERROR_MSG } from '@/test/test.constant';
 
 jest.mock('redis', () => ({
   createClient: jest.fn(),
@@ -74,10 +75,10 @@ describe('RedisModule', () => {
   });
 
   it('should throw if Redis connection fails', async () => {
-    mockConnect.mockRejectedValue(new Error('Redis connection failed'));
+    mockConnect.mockRejectedValue(TEST_ERROR);
 
     const faultyFactory = async () => {
-      const config = mockConfigService as any;
+      const config = mockConfigService as Partial<ConfigService>;
       const client = createClient({
         socket: {
           host: config.get('redis_host'),
@@ -87,9 +88,9 @@ describe('RedisModule', () => {
         database: config.get('redis_db'),
       });
 
-      await client.connect(); // 会抛错
+      await client.connect();
     };
 
-    await expect(faultyFactory()).rejects.toThrow('Redis connection failed');
+    await expect(faultyFactory()).rejects.toThrow(TEST_ERROR_MSG);
   });
 });

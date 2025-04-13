@@ -3,6 +3,7 @@ import { BillController } from '@/modules/bill/controller/bill.controller';
 import { BillService } from '@/modules/bill/service/bill.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
+import { TEST_USER_ID } from '@/test/test.constant';
 
 describe('BillController', () => {
   let controller: BillController;
@@ -13,18 +14,17 @@ describe('BillController', () => {
     list: jest.fn(),
   };
 
-  const testUid = 1;
-  const testBillId = 1;
-  const testBillTypeId = 1;
+  const TEST_BILL_ID = 1;
+  const TEST_BILL_TYPE_ID = 1;
   const mockDate = new Date();
 
   const mockBillData = {
-    id: testBillId,
+    id: TEST_BILL_ID,
     payType: PayTypeEnum.PAID,
     amount: 1200,
     data: mockDate,
     type: {
-      id: testBillTypeId,
+      id: TEST_BILL_TYPE_ID,
     },
   };
 
@@ -51,7 +51,7 @@ describe('BillController', () => {
       {
         id: mockBillData.id,
         type: {
-          id: testBillTypeId,
+          id: TEST_BILL_TYPE_ID,
         },
         payType: mockBillData.payType,
         amount: mockBillData.amount,
@@ -78,7 +78,7 @@ describe('BillController', () => {
       mockPageInfo.pageNo,
       mockPageInfo.pageSize,
       mockDate,
-      testUid,
+      TEST_USER_ID,
     );
 
     expect(res).toEqual({
@@ -105,7 +105,7 @@ describe('BillController', () => {
         typeId: mockBillData.type.id,
         payType: mockBillData.payType,
       },
-      testUid,
+      TEST_USER_ID,
     );
 
     expect(res).toEqual({
@@ -131,7 +131,7 @@ describe('BillController', () => {
         typeId: mockBillData.type.id,
         payType: mockBillData.payType,
       },
-      testUid,
+      TEST_USER_ID,
     );
 
     expect(res).toEqual({
@@ -150,7 +150,7 @@ describe('BillController', () => {
       data: null,
     });
 
-    const res = await controller.delete(testBillId, testUid);
+    const res = await controller.delete(TEST_BILL_ID, TEST_USER_ID);
 
     expect(res).toEqual({
       code: ResultCodeEnum.success,
