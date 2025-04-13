@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PermissionController } from './permission.controller';
-import { PermissionService } from './permission.service';
+import { PermissionController } from '@/modules/permission/permission.controller';
+import { PermissionService } from '@/modules/permission/permission.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { TEST_PAGE_NO, TEST_PAGE_SIZE, TEST_TOTAL } from '@/test/test.constant';
 

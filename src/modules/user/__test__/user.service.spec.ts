@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from './user.service';
+import { UserService } from '@/modules/user/user.service';
 import { UserEntity } from '@/modules/user/entities/user.entity';
 import { CacheEnum, ResultCodeEnum } from '@/core/common/constant';
 import { CaptchaService } from '@/core/captcha/captcha.service';

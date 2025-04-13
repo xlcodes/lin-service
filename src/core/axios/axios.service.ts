@@ -29,7 +29,6 @@ export class AxiosService {
       );
 
       const { errcode, errmsg } = result;
-      console.log('Received response:', result);
 
       if (errcode) {
         this.logger.error(`微信登录失败：${errcode} => ${errmsg}`);

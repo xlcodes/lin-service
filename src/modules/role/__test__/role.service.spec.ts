@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RoleService } from './role.service';
+import { RoleService } from '../role.service';
 import { UserService } from '@/modules/user/user.service';
 import { Logger } from '@nestjs/common';
 import { RoleEntity } from '@/modules/role/entities/role.entity';

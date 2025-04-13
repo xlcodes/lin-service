@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RoleController } from './role.controller';
-import { RoleService } from './role.service';
+import { RoleController } from '@/modules/role/role.controller';
+import { RoleService } from '@/modules/role/role.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { CreateRoleDto } from '@/modules/role/dto/create-role.dto';
 import { TEST_TOTAL, TEST_PAGE_SIZE, TEST_PAGE_NO } from '@/test/test.constant';

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BillTypeController } from './bill-type.controller';
+import { BillTypeController } from '../controller/bill-type.controller';
 import { BillTypeService } from '@/modules/bill/service/bill-type.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { PayTypeEnum } from '@/core/enum/bill.enum';

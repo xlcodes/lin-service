@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BillTypeService } from './bill-type.service';
+import { BillTypeService } from '@/modules/bill/service/bill-type.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BillTypeEntity } from '@/modules/bill/entities/bill-type.entity';
 import { UserService } from '@/modules/user/user.service';

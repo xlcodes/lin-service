@@ -13,7 +13,7 @@ export class CaptchaService {
   private readonly redisService: RedisService;
 
   // 验证码下发
-  async generateCode() {
+  async generateCode(): Promise<ResultData<any>> {
     const captchaInfo = createMath();
     const id = uuid();
 

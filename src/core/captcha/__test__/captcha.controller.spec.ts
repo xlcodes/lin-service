@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CaptchaController } from './captcha.controller';
+import { CaptchaController } from '@/core/captcha/captcha.controller';
 import { CaptchaService } from '@/core/captcha/captcha.service';
 import { ResultData } from '@/core/utils/result';
 import { ResultCodeEnum } from '@/core/common/constant';

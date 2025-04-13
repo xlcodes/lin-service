@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BillController } from './bill.controller';
-import { BillService } from '../service/bill.service';
+import { BillController } from '@/modules/bill/controller/bill.controller';
+import { BillService } from '@/modules/bill/service/bill.service';
 import { ResultCodeEnum } from '@/core/common/constant';
 import { PayTypeEnum } from '@/core/enum/bill.enum';
 

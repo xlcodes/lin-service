@@ -9,18 +9,6 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { REQUIRE_IS_ADMIN } from '@/core/common/constant';
-import { UserEntity } from '@/modules/user/entities/user.entity';
-
-interface JwtUserData {
-  userId: number;
-  uuid: string;
-}
-
-declare module 'express' {
-  interface Request {
-    user: JwtUserData | UserEntity;
-  }
-}
 
 @Injectable()
 export class IsAdminGuard implements CanActivate {
